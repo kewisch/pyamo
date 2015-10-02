@@ -30,6 +30,11 @@ DEFAULT_MESSAGE = {
     'comment': 'FYI: bananas!'
 }
 
+QUEUES = [
+    'unlisted_queue/nominated', 'unlisted_queue/pending',
+    'unlisted_queue/preliminary', 'queue/fast', 'queue/nominated queue/pending',
+    'queue/preliminary', 'queue/reviews'
+]
 
 @subcmd('info')
 def cmd_info(amo, args):
@@ -53,7 +58,7 @@ def cmd_list(amo, args):
     handler.ignore_subcommands()
     handler.add_argument('-u', '--url', action='store_true',
                          help='output add-on urls only')
-    handler.add_argument('-q', '--queue', default='unlisted_queue/preliminary',
+    handler.add_argument('-q', '--queue', choices=QUEUES, default=QUEUES[0],
                          help='the queue name or url to list')
     args = handler.parse_args(args)
 
