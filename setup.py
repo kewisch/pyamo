@@ -15,7 +15,15 @@ setup(
     license = "MPL-2.0",
     keywords = "amo mozilla add-ons",
     url = "https://github.com/kewisch/pyamo",
-    packages=['pyamo'],
+    packages = ['pyamo'],
+    install_requires = [
+        'python-magic',
+        'requests',
+        'lxml',
+        'cssselect',
+        'arghandler',
+        'pylzma'
+    ],
     entry_points = {
         'console_scripts': ['amotool=pyamo.cli:main']
     },

@@ -1,6 +1,2 @@
-python-magic
-requests
-lxml
-cssselect
-arghandler
-pylzma
+# requirements are specified in setup.py
+-e .
