@@ -65,6 +65,7 @@ def cmd_list(amo, args):
     else:
         print(*queue, sep="\n")
 
+# pylint: disable=too-many-branches
 @subcmd('get')
 def cmd_get(amo, args):
     handler = ArgumentHandler()
