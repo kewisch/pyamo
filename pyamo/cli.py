@@ -196,10 +196,16 @@ def cmd_log(amo, args):
         logs = sorted(logs, key=lambda entry: getattr(entry, args.key))
 
     if args.url:
-        for entry in logs:
-            print(entry.url)
-    else:
-        print(*logs, sep="\n")
+        logs = uniq([entry.url for entry in logs])
+
+    print(*logs, sep="\n")
+
+def uniq(seq):
+    previous = None
+    for value in seq:
+        if previous != value:
+            yield value
+            previous = value
 
 def init_logging(level, _):
     logging.basicConfig()
