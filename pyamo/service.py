@@ -47,22 +47,24 @@ class AddonsService(object):
 
         return queue
 
-    def get_logs(self, logs, start=None, end=None, query=None):
-        url = '%s/%s' % (AMO_EDITOR_BASE, logs)
+    def get_logs(self, loglist, start=None, end=None, query=None):
         payload = {
             'start': start,
             'end': end,
             'search': query
         }
 
-        req = self.session.get(url, params=payload, stream=True)
-        doc = lxml.html.parse(req.raw).getroot()
-
-        logrows = doc.xpath(csspath('#log-listing > tbody > tr[data-addonid]'))
-
         logs = []
+        url = '%s/%s' % (AMO_EDITOR_BASE, loglist)
+        while url:
+            req = self.session.get(url, params=payload, stream=True)
+            doc = lxml.html.parse(req.raw).getroot()
+            logrows = doc.xpath(csspath('#log-listing > tbody > tr[data-addonid]'))
 
-        for row in logrows:
-            logs.append(LogEntry(self.session, row))
+            for row in logrows:
+                logs.append(LogEntry(self.session, row))
+
+            nextlink = doc.xpath(csspath('.pagination > li > a[rel="next"]'))
+            url = urljoin(url, nextlink[0].attrib['href']) if len(nextlink) else None
 
         return logs
