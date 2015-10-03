@@ -25,7 +25,7 @@ setup(
         'pylzma'
     ],
     entry_points = {
-        'console_scripts': ['amotool=pyamo.cli:main']
+        'console_scripts': ['amo=pyamo.cli:main']
     },
     classifiers = [
         "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
