@@ -64,7 +64,7 @@ def cmd_list(amo, args):
     handler.ignore_subcommands()
     handler.add_argument('-u', '--url', action='store_true',
                          help='output add-on urls only')
-    handler.add_argument('-q', '--queue', choices=QUEUES, default=QUEUES[0],
+    handler.add_argument('queue', nargs='?', choices=QUEUES, default=QUEUES[0],
                          help='the queue name or url to list')
     args = handler.parse_args(args)
 
@@ -184,7 +184,7 @@ def cmd_log(amo, args):
                          help='sort by the given key')
     handler.add_argument('-u', '--url', action='store_true',
                          help='output add-on urls only')
-    handler.add_argument('logs', default=REVIEW_LOGS[0], choices=REVIEW_LOGS,
+    handler.add_argument('logs', nargs='?', default=REVIEW_LOGS[0], choices=REVIEW_LOGS,
                          help='the type of logs to retrieve')
     handler.ignore_subcommands()
     args = handler.parse_args(args)
