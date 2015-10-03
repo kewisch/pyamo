@@ -3,6 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 # Portions Copyright (C) Philipp Kewisch, 2015
 
+import sys
+
 from .utils import AMO_EDITOR_BASE
 
 from urlparse import urljoin
@@ -24,5 +26,8 @@ class QueueEntry(object):
         self.age = agerow.text
         self.session = session
 
+    def __unicode__(self):
+        return u'%s - %s %s' % (self.age.ljust(10), self.name, self.version)
+
     def __str__(self):
-        return '%s - %s %s' % (self.age.ljust(10), self.name, self.version)
+        return unicode(self).encode(sys.stdout.encoding, 'replace')
