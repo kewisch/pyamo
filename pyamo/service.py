@@ -9,6 +9,7 @@ import lxml.html
 from urlparse import urljoin
 
 from .queue import QueueEntry
+from .logs import LogEntry
 from .review import Review
 from .session import AmoSession
 from .utils import AMO_BASE, AMO_EDITOR_BASE, csspath
@@ -45,3 +46,23 @@ class AddonsService(object):
             url = urljoin(url, nextlink[0].attrib['href']) if len(nextlink) else None
 
         return queue
+
+    def get_logs(self, logs, start=None, end=None, query=None):
+        url = '%s/%s' % (AMO_EDITOR_BASE, logs)
+        payload = {
+            'start': start,
+            'end': end,
+            'search': query
+        }
+
+        req = self.session.get(url, params=payload, stream=True)
+        doc = lxml.html.parse(req.raw).getroot()
+
+        logrows = doc.xpath(csspath('#log-listing > tbody > tr[data-addonid]'))
+
+        logs = []
+
+        for row in logrows:
+            logs.append(LogEntry(self.session, row))
+
+        return logs

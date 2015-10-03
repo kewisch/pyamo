@@ -36,6 +36,12 @@ QUEUES = [
     'queue/preliminary', 'queue/reviews'
 ]
 
+LOG_SORTKEYS = [
+    'date', 'addonname', 'version', 'reviewer', 'action'
+]
+
+REVIEW_LOGS = ['reviewlog', 'logs', 'beta_signed_log']
+
 @subcmd('info')
 def cmd_info(amo, args):
     handler = ArgumentHandler()
@@ -162,6 +168,38 @@ def cmd_decide(amo, args):
 
     version.decide(args.action, args.message)
     print("Done")
+
+@subcmd('logs')
+def cmd_log(amo, args):
+    handler = ArgumentHandler()
+    handler.add_argument('-l', '--limit', type=int, default=0,
+                         help='maximum number of entries to retrieve')
+    handler.add_argument('-s', '--start',
+                         help='start time range')
+    handler.add_argument('-e', '--end',
+                         help='end time range')
+    handler.add_argument('-q', '--query',
+                         help='filter by add-on, editor or comment')
+    handler.add_argument('-k', '--key', choices=LOG_SORTKEYS,
+                         help='sort by the given key')
+    handler.add_argument('-u', '--url', action='store_true',
+                         help='output add-on urls only')
+    handler.add_argument('logs', default=REVIEW_LOGS[0], choices=REVIEW_LOGS,
+                         help='the type of logs to retrieve')
+    handler.ignore_subcommands()
+    args = handler.parse_args(args)
+
+    logs = amo.get_logs(args.logs, start=args.start, end=args.end,
+                        query=args.query)
+
+    if args.key:
+        logs = sorted(logs, key=lambda entry: getattr(entry, args.key))
+
+    if args.url:
+        for entry in logs:
+            print(entry.url)
+    else:
+        print(*logs, sep="\n")
 
 def init_logging(level, _):
     logging.basicConfig()
