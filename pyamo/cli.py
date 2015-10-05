@@ -172,7 +172,7 @@ def cmd_decide(amo, args):
 @subcmd('logs')
 def cmd_logs(amo, args):
     handler = ArgumentHandler()
-    handler.add_argument('-l', '--limit', type=int, default=0,
+    handler.add_argument('-l', '--limit', type=int, default=sys.maxint,
                          help='maximum number of entries to retrieve')
     handler.add_argument('-s', '--start',
                          help='start time range (in local timezone')
@@ -190,7 +190,7 @@ def cmd_logs(amo, args):
     args = handler.parse_args(args)
 
     logs = amo.get_logs(args.logs, start=args.start, end=args.end,
-                        query=args.query)
+                        query=args.query, limit=args.limit)
 
     if args.key:
         logs = sorted(logs, key=lambda entry: getattr(entry, args.key))

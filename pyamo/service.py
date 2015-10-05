@@ -5,6 +5,7 @@
 
 from __future__ import print_function
 
+import sys
 import lxml.html
 from urlparse import urljoin
 
@@ -51,8 +52,9 @@ class AddonsService(object):
 
         return queue
 
-    def get_logs(self, loglist, start=None, end=None, query=None):
-        # pylint: disable=too-many-locals
+    def get_logs(self, loglist, start=None, end=None, query=None, limit=sys.maxint):
+        # Looks like there is too much of everything here...
+        # pylint: disable=too-many-locals,too-many-arguments,too-many-branches
         payload = {
             'search': query
         }
@@ -76,7 +78,7 @@ class AddonsService(object):
 
         logs = []
         url = '%s/%s' % (AMO_EDITOR_BASE, loglist)
-        while url:
+        while url and len(logs) < limit:
             req = self.session.get(url, params=payload, stream=True)
             doc = lxml.html.parse(req.raw).getroot()
             logrows = doc.xpath(csspath('#log-listing > tbody > tr[data-addonid]'))
@@ -86,6 +88,9 @@ class AddonsService(object):
                 if (not dtstart or entry.date >= dtstart) and \
                    (not dtend or entry.date <= dtend):
                     logs.append(entry)
+
+                if len(logs) >= limit:
+                    break
 
             nextlink = doc.xpath(csspath('.pagination > li > a[rel="next"]'))
             url = urljoin(url, nextlink[0].attrib['href']) if len(nextlink) else None
