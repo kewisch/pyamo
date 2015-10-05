@@ -22,7 +22,10 @@ setup(
         'lxml',
         'cssselect',
         'arghandler >=1.0.3',
-        'pylzma'
+        'pylzma',
+        'pytz',
+        'tzlocal',
+        'python-dateutil'
     ],
     entry_points = {
         'console_scripts': ['amo=pyamo.cli:main']

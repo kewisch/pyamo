@@ -12,7 +12,11 @@ from .queue import QueueEntry
 from .logs import LogEntry
 from .review import Review
 from .session import AmoSession
-from .utils import AMO_BASE, AMO_EDITOR_BASE, csspath
+from .utils import AMO_BASE, AMO_EDITOR_BASE, AMO_TIMEZONE, csspath
+
+from tzlocal import get_localzone
+from datetime import timedelta
+from dateutil import parser as dateparser
 
 class AddonsService(object):
     def __init__(self, login_prompter=None, cookiefile=None):
@@ -48,11 +52,27 @@ class AddonsService(object):
         return queue
 
     def get_logs(self, loglist, start=None, end=None, query=None):
+        # pylint: disable=too-many-locals
         payload = {
-            'start': start,
-            'end': end,
             'search': query
         }
+
+        dtstart = None
+        dtend = None
+        localtz = get_localzone()
+
+        # We need to offset the date a bit so the returned results are in the
+        # user's local timezone. If specific times were passed then don't
+        # expand the end date to the end of the day.
+        if start:
+            dtstart = localtz.localize(dateparser.parse(start))
+            payload['start'] = dtstart.astimezone(AMO_TIMEZONE).strftime('%Y-%m-%d')
+
+        if end:
+            dtend = localtz.localize(dateparser.parse(end))
+            if dtend.hour == 0 and dtend.minute == 0 and dtend.second == 0:
+                dtend += timedelta(days=1)
+            payload['end'] = dtend.astimezone(AMO_TIMEZONE).strftime('%Y-%m-%d')
 
         logs = []
         url = '%s/%s' % (AMO_EDITOR_BASE, loglist)
@@ -62,7 +82,10 @@ class AddonsService(object):
             logrows = doc.xpath(csspath('#log-listing > tbody > tr[data-addonid]'))
 
             for row in logrows:
-                logs.append(LogEntry(self.session, row))
+                entry = LogEntry(self.session, row)
+                if (not dtstart or entry.date >= dtstart) and \
+                   (not dtend or entry.date <= dtend):
+                    logs.append(entry)
 
             nextlink = doc.xpath(csspath('.pagination > li > a[rel="next"]'))
             url = urljoin(url, nextlink[0].attrib['href']) if len(nextlink) else None

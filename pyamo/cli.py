@@ -170,14 +170,14 @@ def cmd_decide(amo, args):
     print("Done")
 
 @subcmd('logs')
-def cmd_log(amo, args):
+def cmd_logs(amo, args):
     handler = ArgumentHandler()
     handler.add_argument('-l', '--limit', type=int, default=0,
                          help='maximum number of entries to retrieve')
     handler.add_argument('-s', '--start',
-                         help='start time range')
+                         help='start time range (in local timezone')
     handler.add_argument('-e', '--end',
-                         help='end time range')
+                         help='end time range (in local timezone, inclusive)')
     handler.add_argument('-q', '--query',
                          help='filter by add-on, editor or comment')
     handler.add_argument('-k', '--key', choices=LOG_SORTKEYS,

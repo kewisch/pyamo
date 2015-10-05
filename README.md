@@ -15,10 +15,10 @@ options, just the sub-commands:
 
 ```
 usage: amo [-h] [-c COOKIES] [-d {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
-           {info,list,decide,get} ...
+           {info,list,logs,decide,get} ...
 
 positional arguments:
-  {info,list,decide,get}
+  {info,list,logs,decide,get}
   cargs                 arguments for the subcommand
 
 optional arguments:
@@ -44,6 +44,42 @@ optional arguments:
                         the queue name or url to list
 
 ```
+
+### amo logs
+Show review log information. The log list name is again the last part of the
+url, for example:
+* Add-on Review Log: `reviewlog`
+* Moderated Review Log: `logs`
+* Signed Beta Files Log: `beta_signed_log`
+
+The logs may be queried by date with the `-s` and `-e` parameters, the dates
+are inclusive and in the local timezone (while addons.mozilla.org always uses
+Pacific time). Also, you can query by add-on, editor or comment with the `-q`
+parameter.
+
+```
+usage: amo logs [-h] [-l LIMIT] [-s START] [-e END] [-q QUERY]
+           [-k {date,addonname,version,reviewer,action}] [-u]
+           [{reviewlog,logs,beta_signed_log}]
+
+positional arguments:
+  {reviewlog,logs,beta_signed_log}
+                        the type of logs to retrieve
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -l LIMIT, --limit LIMIT
+                        maximum number of entries to retrieve
+  -s START, --start START
+                        start time range (in local timezone
+  -e END, --end END     end time range (in local timezone, inclusive)
+  -q QUERY, --query QUERY
+                        filter by add-on, editor or comment
+  -k {date,addonname,version,reviewer,action}, --key {date,addonname,version,reviewer,action}
+                        sort by the given key
+  -u, --url             output add-on urls only
+```
+
 
 ### amo get
 Downloads one or more versions to the hard drive for review. Will download both the xpi and the sources and once done extract each package. The files will be saved in a sub-directory named after the addon id in the current (or specified) directory.

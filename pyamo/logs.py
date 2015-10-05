@@ -6,10 +6,11 @@
 import sys
 import urllib
 
-from .utils import AMO_EDITOR_BASE
+from .utils import AMO_EDITOR_BASE, AMO_TIMEZONE
 
 from urlparse import urljoin
-from datetime import datetime
+from dateutil import parser as dateparser
+from tzlocal import get_localzone
 
 class LogEntry(object):
     # pylint: disable=too-few-public-methods,too-many-instance-attributes
@@ -20,7 +21,7 @@ class LogEntry(object):
         dtcell, msgcell, editorcell, _ = row.getchildren()
         nameelem, actionelem = msgcell.getchildren()
 
-        self.date = datetime.strptime(dtcell.text, '%b %d, %Y %I:%M:%S %p')
+        self.date = AMO_TIMEZONE.localize(dateparser.parse(dtcell.text))
         self.addonname = nameelem.text.strip()
         self.addonid = urllib.unquote(actionelem.attrib['href'].split('/')[-1]).decode('utf8')
         self.url = urljoin(AMO_EDITOR_BASE, actionelem.attrib['href'])
@@ -30,8 +31,9 @@ class LogEntry(object):
         self.session = session
 
     def __unicode__(self):
+        localdt = self.date.astimezone(get_localzone()).strftime('%Y-%m-%d %I:%M:%S')
         return u'%s %s %s %s %s %s' % (
-            self.date, self.reviewer.ljust(20), self.action.ljust(25),
+            localdt, self.reviewer.ljust(20), self.action.ljust(25),
             self.addonid.ljust(30), self.addonname, self.version
         )
 
