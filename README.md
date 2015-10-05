@@ -7,15 +7,15 @@ tools use website scraping to determine the right information and use the same
 endpoints as they would be used in the browser.
 
 
-amotool - the command line utility
+amo - the command line utility
 ----------------------------------
 
 General usage as follows, in most cases you don't have to use any of these
 options, just the sub-commands:
 
 ```
-usage: amotool [-h] [-c COOKIES] [-d {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
-               {info,list,decide,get} ...
+usage: amo [-h] [-c COOKIES] [-d {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+           {info,list,decide,get} ...
 
 positional arguments:
   {info,list,decide,get}
@@ -27,15 +27,15 @@ optional arguments:
                         the file to save the session cookies to
   -d {DEBUG,INFO,WARNING,ERROR,CRITICAL}, --debug {DEBUG,INFO,WARNING,ERROR,CRITICAL}
 ```
-### amotool list
+### amo list
 Show information from the editor queue. The queue name is the last part of the
 url, for example:
 * Unlisted: `unlisted_queue/nominated`, ` unlisted_queue/pending`, `unlisted_queue/preliminary`
 * Listed: `queue/fast`, `queue/nominated` `queue/pending` `queue/preliminary` `queue/reviews`
 
 ```
-usage: amotool [-h] [-u]
-               [-q {unlisted_queue/nominated,unlisted_queue/pending,...}]
+usage: amo [-h] [-u]
+           [-q {unlisted_queue/nominated,unlisted_queue/pending,...}]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -45,11 +45,11 @@ optional arguments:
 
 ```
 
-### amotool get
+### amo get
 Downloads one or more versions to the hard drive for review. Will download both the xpi and the sources and once done extract each package. The files will be saved in a sub-directory named after the addon id in the current (or specified) directory.
 
 ```
-usage: amotool get [-h] [-o OUTDIR] [-l LIMIT] [-v VERSION] addon
+usage: amo get [-h] [-o OUTDIR] [-l LIMIT] [-v VERSION] addon
 
 positional arguments:
   addon                 the addon id or url to get
@@ -64,11 +64,11 @@ optional arguments:
                         pull a specific version
 ```
 
-### amotool info
+### amo info
 Shows information about an add-on, including versions, reviews and file states.
 
 ```
-usage: amotool info [-h] addon
+usage: amo info [-h] addon
 
 positional arguments:
   addon       the addon id or url to show info about
@@ -77,12 +77,12 @@ optional arguments:
   -h, --help  show this help message and exit
 ```
 
-### amotool decide
+### amo decide
 Decides on an add-on review. If the message argument is omitted, an editor is opened to write the message.
 
 ```
-usage: amotool decide [-h] [-m MESSAGE]
-               addon {info,comment,reject,prelim,super,public}
+usage: amo decide [-h] [-m MESSAGE]
+           addon {info,comment,reject,prelim,super,public}
 
 positional arguments:
   addon                 the addon id or url to decide about
