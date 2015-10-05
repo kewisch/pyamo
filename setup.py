@@ -21,7 +21,7 @@ setup(
         'requests',
         'lxml',
         'cssselect',
-        'arghandler',
+        'arghandler >=1.0.3',
         'pylzma'
     ],
     entry_points = {

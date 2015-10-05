@@ -233,7 +233,7 @@ def main():
     handler = ArgumentHandler()
     handler.add_argument('-c', '--cookies', default=cookiedefault,
                          help='the file to save the session cookies to')
-    handler.set_logging_argument('-d', '--debug', default_value=logging.WARNING,
+    handler.set_logging_argument('-d', '--debug', default_level=logging.WARNING,
                                  config_fxn=init_logging)
     handler.run(sys.argv[1:], context_fxn=load_context)
     amo.persist()
