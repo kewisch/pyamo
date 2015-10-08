@@ -8,17 +8,17 @@ endpoints as they would be used in the browser.
 
 
 amo - the command line utility
-----------------------------------
+------------------------------
 
 General usage as follows, in most cases you don't have to use any of these
 options, just the sub-commands:
 
 ```
 usage: amo [-h] [-c COOKIES] [-d {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
-           {info,list,logs,decide,get} ...
+           {info,logs,get,list,upload,decide} ...
 
 positional arguments:
-  {info,list,logs,decide,get}
+  {info,logs,get,list,upload,decide}
   cargs                 arguments for the subcommand
 
 optional arguments:
@@ -27,7 +27,44 @@ optional arguments:
                         the file to save the session cookies to
   -d {DEBUG,INFO,WARNING,ERROR,CRITICAL}, --debug {DEBUG,INFO,WARNING,ERROR,CRITICAL}
 ```
-### amo list
+
+### Developer commands
+These commands are meant for add-on developers and will work for add-ons you
+have developer access to.
+
+#### amo upload
+Uploads one or more xpi packages to an existing add-on. Typical usage is
+specifying the add-on id, together with one or more occurrences of the -x
+parameter. Example:
+
+```
+amo upload lightning \
+    -x linux lightning-linux.xpi \
+    -x mac lightning-mac.xpi \
+    -x win lightning-win32
+```
+
+Here is the full help text, in case you also need to upload sources:
+```
+usage: amo upload [-h] [-v] -x {all,linux,mac,win,android} XPI [-s SOURCE] addon
+
+positional arguments:
+  addon                 the addon id to upload
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --verbose         show validation messages
+  -x {all,linux,mac,win,android} XPI, --xpi {all,linux,mac,win,android} XPI
+                        upload an xpi for a platform
+  -s SOURCE, --source SOURCE
+                        add sources to this submission
+```
+
+### Editor commands
+These commands are meant for AMO editors. They will fail in random ways if you
+are not.
+
+#### amo list
 Show information from the editor queue. The queue name is the last part of the
 url, for example:
 * Unlisted: `unlisted_queue/nominated`, ` unlisted_queue/pending`, `unlisted_queue/preliminary`

@@ -14,7 +14,27 @@ AMO_HOST = os.environ['AMO_HOST'] if 'AMO_HOST' in os.environ else 'addons.mozil
 
 AMO_BASE = "https://%s/en-US" % AMO_HOST
 AMO_EDITOR_BASE = '%s/editors' % AMO_BASE
+AMO_DEVELOPER_BASE = '%s/developers' % AMO_BASE
 AMO_TIMEZONE = timezone("America/Los_Angeles")
+
+VALIDATION_WAIT = 5
+
+UPLOAD_PLATFORM = {
+    'all': '1',
+    'linux': '2',
+    'osx': '3',
+    'mac': '3',
+    'windows': '5',
+    'win': '5',
+    'win32': '5',
+    'android': '7'
+}
 
 def csspath(query):
     return cssselect.HTMLTranslator().css_to_xpath(query)
+
+def flagstr(obj, name, altname=None):
+    if name in obj and obj[name]:
+        return "[%s]" % (altname or name)
+    else:
+        return ""

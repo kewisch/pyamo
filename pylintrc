@@ -44,7 +44,7 @@ reports=no
 include-naming-hint=yes
 
 # Good variable names which should always be accepted, separated by a comma
-good-names=fd,zf,_
+good-names=fd,zf,_,e
 
 [FORMAT]
 

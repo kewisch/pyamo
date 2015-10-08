@@ -200,6 +200,38 @@ def cmd_logs(amo, args):
 
     print(*logs, sep="\n")
 
+
+@subcmd('upload')
+def cmd_upload(amo, args):
+    handler = ArgumentHandler()
+    handler.add_argument('-v', '--verbose', action='store_true',
+                         help='show validation messages')
+    handler.add_argument('-x', '--xpi', nargs=2, action='append',
+                         required=True,
+                         metavar=('{all,linux,mac,win,android}', 'XPI'),
+                         help='upload an xpi for a platform')
+    handler.add_argument('-s', '--source',
+                         help='add sources to this submission')
+    handler.add_argument('addon',
+                         help='the addon id to upload')
+    handler.ignore_subcommands()
+    args = handler.parse_args(args)
+
+    for platform, xpi in args.xpi:
+        print("Uploading %s for platform %s" % (xpi, platform))
+        report = amo.upload(args.addon, xpi, platform)
+        print(report)
+        report.show_messages('all' if args.verbose else 'error')
+
+        if report.success:
+            print("Adding version %s" % report.version)
+            url = amo.add_xpi_to_version(args.addon, report, platform, args.source)
+            print("New version added at %s" % url)
+        else:
+            if len(args.xpi) > 1:
+                print("Cancelling uploads, validation has failed")
+            break
+
 def uniq(seq):
     previous = None
     for value in seq:
