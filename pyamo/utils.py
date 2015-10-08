@@ -6,9 +6,13 @@
 from __future__ import print_function
 
 import cssselect
+import os
 from pytz import timezone
 
-AMO_BASE = "https://addons.mozilla.org/en-US"
+# set AMO_HOST=adddons.allizom.org to use staging
+AMO_HOST = os.environ['AMO_HOST'] if 'AMO_HOST' in os.environ else 'addons.mozilla.org'
+
+AMO_BASE = "https://%s/en-US" % AMO_HOST
 AMO_EDITOR_BASE = '%s/editors' % AMO_BASE
 AMO_TIMEZONE = timezone("America/Los_Angeles")
 
