@@ -7,6 +7,7 @@ from __future__ import print_function
 
 import cssselect
 import os
+import re
 from pytz import timezone
 
 # set AMO_HOST=adddons.allizom.org to use staging
@@ -18,6 +19,10 @@ AMO_DEVELOPER_BASE = '%s/developers' % AMO_BASE
 AMO_TIMEZONE = timezone("America/Los_Angeles")
 
 VALIDATION_WAIT = 5
+RE_VERSION_BETA = re.compile(r"""(a|alpha|b|beta|pre|rc) # Either of these
+                              (([\.-]\d)?\d*)         # followed by nothing
+                              $                       # or 123 or .123 or -123
+                              """, re.VERBOSE)
 
 UPLOAD_PLATFORM = {
     'all': '1',

@@ -20,6 +20,7 @@ import httplib
 
 from arghandler import subcmd, ArgumentHandler
 from .service import AddonsService
+from .utils import RE_VERSION_BETA
 
 DEFAULT_MESSAGE = {
     'public': 'Your add-on submission has been approved.',
@@ -210,6 +211,8 @@ def cmd_upload(amo, args):
                          required=True,
                          metavar=('{all,linux,mac,win,android}', 'XPI'),
                          help='upload an xpi for a platform')
+    handler.add_argument('-b', '--beta', action='store_true',
+                         help='force uploading this xpi to the beta channel')
     handler.add_argument('-s', '--source',
                          help='add sources to this submission')
     handler.add_argument('addon',
@@ -223,9 +226,13 @@ def cmd_upload(amo, args):
         print(report)
         report.show_messages('all' if args.verbose else 'error')
 
+        if RE_VERSION_BETA.search(report.version) and not args.beta:
+            print("Version %s matches the beta pattern, uploading as beta" % report.version)
+            args.beta = True
+
         if report.success:
             print("Adding version %s" % report.version)
-            url = amo.add_xpi_to_version(args.addon, report, platform, args.source)
+            url = amo.add_xpi_to_version(args.addon, report, platform, args.source, beta=args.beta)
             print("New version added at %s" % url)
         else:
             if len(args.xpi) > 1:

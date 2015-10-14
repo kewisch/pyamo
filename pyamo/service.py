@@ -152,7 +152,7 @@ class AddonsService(object):
 
         return report
 
-    def add_xpi_to_version(self, addonid, report, platform, source=None):
+    def add_xpi_to_version(self, addonid, report, platform, source=None, beta=False):
         # pylint: disable=too-many-locals,too-many-branches
         sourcefd = None
         try:
@@ -179,6 +179,9 @@ class AddonsService(object):
                 'supported_platforms': (None, UPLOAD_PLATFORM[platform]),
                 'platform': (None, UPLOAD_PLATFORM[platform])
             }
+
+            if beta:
+                payload['beta'] = (None, "on")
 
             if source:
                 sourcefd = open(source, 'rb')

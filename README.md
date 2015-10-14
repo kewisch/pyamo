@@ -46,7 +46,7 @@ amo upload lightning \
 
 Here is the full help text, in case you also need to upload sources:
 ```
-usage: amo upload [-h] [-v] -x {all,linux,mac,win,android} XPI [-s SOURCE] addon
+usage: amo upload [-h] [-v] -x {all,linux,mac,win,android} XPI [-b] [-s SOURCE] addon
 
 positional arguments:
   addon                 the addon id to upload
@@ -56,6 +56,7 @@ optional arguments:
   -v, --verbose         show validation messages
   -x {all,linux,mac,win,android} XPI, --xpi {all,linux,mac,win,android} XPI
                         upload an xpi for a platform
+  -b, --beta            force uploading this xpi to the beta channel
   -s SOURCE, --source SOURCE
                         add sources to this submission
 ```
