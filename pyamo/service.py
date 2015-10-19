@@ -153,7 +153,7 @@ class AddonsService(object):
         return report
 
     def add_xpi_to_version(self, addonid, report, platform, source=None, beta=False):
-        # pylint: disable=too-many-locals,too-many-branches
+        # pylint: disable=too-many-locals,too-many-branches,too-many-arguments
         sourcefd = None
         try:
             url = '%s/addon/%s/versions' % (AMO_DEVELOPER_BASE, addonid)
