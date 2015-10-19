@@ -44,10 +44,8 @@ LOG_SORTKEYS = [
 REVIEW_LOGS = ['reviewlog', 'logs', 'beta_signed_log']
 
 @subcmd('info')
-def cmd_info(amo, args):
-    handler = ArgumentHandler()
+def cmd_info(handler, amo, args):
     handler.add_argument('addon', help='the addon id or url to show info about')
-    handler.ignore_subcommands()
     args = handler.parse_args(args)
 
     review = amo.get_review(args.addon)
@@ -60,9 +58,7 @@ def cmd_info(amo, args):
             print("\t\tSources: %s" % version.sources)
 
 @subcmd('list')
-def cmd_list(amo, args):
-    handler = ArgumentHandler()
-    handler.ignore_subcommands()
+def cmd_list(handler, amo, args):
     handler.add_argument('-u', '--url', action='store_true',
                          help='output add-on urls only')
     handler.add_argument('queue', nargs='?', choices=QUEUES, default=QUEUES[0],
@@ -79,8 +75,7 @@ def cmd_list(amo, args):
 
 # pylint: disable=too-many-branches
 @subcmd('get')
-def cmd_get(amo, args):
-    handler = ArgumentHandler()
+def cmd_get(handler, amo, args):
     handler.add_argument('-o', '--outdir', default=os.getcwd(),
                          help='output directory for add-ons')
     handler.add_argument('-l', '--limit', type=int, default=1,
@@ -89,7 +84,6 @@ def cmd_get(amo, args):
                          help='pull a specific version')
     handler.add_argument('addon',
                          help='the addon id or url to get')
-    handler.ignore_subcommands()
     args = handler.parse_args(args)
 
     review = amo.get_review(args.addon)
@@ -129,12 +123,10 @@ def cmd_get(amo, args):
             version.extractsources(sourceoutdir)
 
 @subcmd('decide')
-def cmd_decide(amo, args):
-    handler = ArgumentHandler()
+def cmd_decide(handler, amo, args):
     handler.add_argument('-m', '--message', help='comment add to the review')
     handler.add_argument('addon', help='the addon id or url to decide about')
     handler.add_argument('action', choices=DEFAULT_MESSAGE.keys(), help='the action to execute')
-    handler.ignore_subcommands()
     args = handler.parse_args(args)
 
     review = amo.get_review(args.addon)
@@ -171,8 +163,7 @@ def cmd_decide(amo, args):
     print("Done")
 
 @subcmd('logs')
-def cmd_logs(amo, args):
-    handler = ArgumentHandler()
+def cmd_logs(handler, amo, args):
     handler.add_argument('-l', '--limit', type=int, default=sys.maxint,
                          help='maximum number of entries to retrieve')
     handler.add_argument('-s', '--start',
@@ -187,7 +178,6 @@ def cmd_logs(amo, args):
                          help='output add-on urls only')
     handler.add_argument('logs', nargs='?', default=REVIEW_LOGS[0], choices=REVIEW_LOGS,
                          help='the type of logs to retrieve')
-    handler.ignore_subcommands()
     args = handler.parse_args(args)
 
     logs = amo.get_logs(args.logs, start=args.start, end=args.end,
@@ -203,8 +193,7 @@ def cmd_logs(amo, args):
 
 
 @subcmd('upload')
-def cmd_upload(amo, args):
-    handler = ArgumentHandler()
+def cmd_upload(handler, amo, args):
     handler.add_argument('-v', '--verbose', action='store_true',
                          help='show validation messages')
     handler.add_argument('-x', '--xpi', nargs=2, action='append',
@@ -217,7 +206,6 @@ def cmd_upload(amo, args):
                          help='add sources to this submission')
     handler.add_argument('addon',
                          help='the addon id to upload')
-    handler.ignore_subcommands()
     args = handler.parse_args(args)
 
     for platform, xpi in args.xpi:
