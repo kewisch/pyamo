@@ -72,15 +72,16 @@ url, for example:
 * Listed: `queue/fast`, `queue/nominated` `queue/pending` `queue/preliminary` `queue/reviews`
 
 ```
-usage: amo [-h] [-u]
-           [-q {unlisted_queue/nominated,unlisted_queue/pending,...}]
+usage: amo list [-h] [-u]
+                [{unlisted_queue/nominated,unlisted_queue/pending,unlisted_queue/preliminary,queue/fast,queue/nominated,queue/pending,queue/preliminary,queue/reviews}]
+
+positional arguments:
+  {unlisted_queue/nominated,unlisted_queue/pending,unlisted_queue/preliminary,queue/fast,queue/nominated,queue/pending,queue/preliminary,queue/reviews}
+                        the queue name or url to list
 
 optional arguments:
   -h, --help            show this help message and exit
   -u, --url             output add-on urls only
-  -q {unlisted_queue/nominated,...}, --queue {unlisted_queue/nominated,...}
-                        the queue name or url to list
-
 ```
 
 ### amo logs

@@ -33,8 +33,8 @@ DEFAULT_MESSAGE = {
 
 QUEUES = [
     'unlisted_queue/nominated', 'unlisted_queue/pending',
-    'unlisted_queue/preliminary', 'queue/fast', 'queue/nominated queue/pending',
-    'queue/preliminary', 'queue/reviews'
+    'unlisted_queue/preliminary', 'queue/fast', 'queue/nominated',
+    'queue/pending', 'queue/preliminary', 'queue/reviews'
 ]
 
 LOG_SORTKEYS = [
