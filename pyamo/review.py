@@ -36,7 +36,17 @@ class Review(object):
         self.url = '%s/review/%s' % (AMO_EDITOR_BASE, addonid)
 
     def get(self):
-        req = self.session.get(self.url, stream=True)
+        req = self.session.get(self.url, stream=True, allow_redirects=False)
+
+        if req.status_code == 302:
+            if 'messages' not in req.cookies:
+                raise Exception("Invalid response")
+            message = req.cookies['messages'].split("\\\\n")
+            if len(message) != 4:
+                raise Exception("Invalid response")
+
+            raise Exception(message[1].strip())
+
         doc = lxml.html.parse(req.raw).getroot()
 
         self.versions = []
