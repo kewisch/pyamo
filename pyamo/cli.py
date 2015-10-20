@@ -38,8 +38,7 @@ QUEUES = {
     'fast': 'queue/fast',
     'nominated': 'queue/nominated',
     'pending': 'queue/pending',
-    'preliminary': 'queue/preliminary',
-    'reviews': 'queue/reviews'
+    'preliminary': 'queue/preliminary'
 }
 ALL_QUEUES = QUEUES.copy()
 ALL_QUEUES.update({v: v for v in QUEUES.values()})

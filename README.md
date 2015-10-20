@@ -69,14 +69,14 @@ are not.
 Show information from the editor queue. The queue name can be the last part of
 the url, or a slightly shortened variant:
 * Unlisted: `unlisted/nominated`, ` unlisted/pending`, `unlisted/preliminary`
-* Listed: `fast`, `nominated`, `pending`, `preliminary`, `reviews`
+* Listed: `fast`, `nominated`, `pending`, `preliminary`
 
 ```
 usage: amo list [-h] [-u]
-                [{fast,nominated,pending,preliminary,reviews,unlisted/nominated,unlisted/pending,unlisted/preliminary}]
+                [{fast,nominated,pending,preliminary,unlisted/nominated,unlisted/pending,unlisted/preliminary}]
 
 positional arguments:
-  {fast,nominated,pending,preliminary,reviews,unlisted/nominated,unlisted/pending,unlisted/preliminary}
+  {fast,nominated,pending,preliminary,unlisted/nominated,unlisted/pending,unlisted/preliminary}
                         the queue to list
 
 optional arguments:
