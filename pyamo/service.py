@@ -38,16 +38,26 @@ class AddonsService(object):
 
     def _unpaginate(self, url, func, params=None, limit=sys.maxint):
         things = []
+        lastlen = -1
 
         while url and len(things) < limit:
             req = self.session.get(url, stream=True, params=params)
             doc = lxml.html.parse(req.raw).getroot()
+            lastlen = len(things)
             nexturl = func(things, doc)
+            thislen = len(things)
+
+            if lastlen == thislen:
+                raise Exception('Page at %s did not contain any items' % url)
+
+            if thislen > limit:
+                things = things[:limit]
 
             # Get the next url and make sure to unset parameters, since they
             # will be provided in the next url anyway.
             url = urljoin(AMO_EDITOR_BASE, nexturl) if nexturl else None
             params = None
+
 
         return things
 
@@ -99,9 +109,6 @@ class AddonsService(object):
                 if (not dtstart or entry.date >= dtstart) and \
                    (not dtend or entry.date <= dtend):
                     logs.append(entry)
-
-                if len(logs) >= limit:
-                    break
 
             nextlink = doc.xpath(csspath('.pagination > li > a[rel="next"]'))
             return nextlink[0].attrib['href'] if len(nextlink) else None

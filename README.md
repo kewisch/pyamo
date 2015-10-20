@@ -86,10 +86,7 @@ optional arguments:
 
 ### amo logs
 Show review log information. The log list name is again the last part of the
-url, for example:
-* Add-on Review Log: `reviewlog`
-* Moderated Review Log: `logs`
-* Signed Beta Files Log: `beta_signed_log`
+url, but currently only the add-on review log is supported (reviewlog).
 
 The logs may be queried by date with the `-s` and `-e` parameters, the dates
 are inclusive and in the local timezone (while addons.mozilla.org always uses
@@ -98,12 +95,11 @@ parameter.
 
 ```
 usage: amo logs [-h] [-l LIMIT] [-s START] [-e END] [-q QUERY]
-           [-k {date,addonname,version,reviewer,action}] [-u]
-           [{reviewlog,logs,beta_signed_log}]
+                [-k {date,addonname,version,reviewer,action}] [-u]
+                [{reviewlog}]
 
 positional arguments:
-  {reviewlog,logs,beta_signed_log}
-                        the type of logs to retrieve
+  {reviewlog}           the type of logs to retrieve
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -117,8 +113,8 @@ optional arguments:
   -k {date,addonname,version,reviewer,action}, --key {date,addonname,version,reviewer,action}
                         sort by the given key
   -u, --url             output add-on urls only
-```
 
+```
 
 ### amo get
 Downloads one or more versions to the hard drive for review. Will download both the xpi and the sources and once done extract each package. The files will be saved in a sub-directory named after the addon id in the current (or specified) directory.

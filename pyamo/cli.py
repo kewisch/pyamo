@@ -48,7 +48,7 @@ LOG_SORTKEYS = [
     'date', 'addonname', 'version', 'reviewer', 'action'
 ]
 
-REVIEW_LOGS = ['reviewlog', 'logs', 'beta_signed_log']
+REVIEW_LOGS = ['reviewlog']
 
 @subcmd('info')
 def cmd_info(handler, amo, args):
