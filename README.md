@@ -66,18 +66,18 @@ These commands are meant for AMO editors. They will fail in random ways if you
 are not.
 
 #### amo list
-Show information from the editor queue. The queue name is the last part of the
-url, for example:
-* Unlisted: `unlisted_queue/nominated`, ` unlisted_queue/pending`, `unlisted_queue/preliminary`
-* Listed: `queue/fast`, `queue/nominated` `queue/pending` `queue/preliminary` `queue/reviews`
+Show information from the editor queue. The queue name can be the last part of
+the url, or a slightly shortened variant:
+* Unlisted: `unlisted/nominated`, ` unlisted/pending`, `unlisted/preliminary`
+* Listed: `fast`, `nominated`, `pending`, `preliminary`, `reviews`
 
 ```
 usage: amo list [-h] [-u]
-                [{unlisted_queue/nominated,unlisted_queue/pending,unlisted_queue/preliminary,queue/fast,queue/nominated,queue/pending,queue/preliminary,queue/reviews}]
+                [{fast,nominated,pending,preliminary,reviews,unlisted/nominated,unlisted/pending,unlisted/preliminary}]
 
 positional arguments:
-  {unlisted_queue/nominated,unlisted_queue/pending,unlisted_queue/preliminary,queue/fast,queue/nominated,queue/pending,queue/preliminary,queue/reviews}
-                        the queue name or url to list
+  {fast,nominated,pending,preliminary,reviews,unlisted/nominated,unlisted/pending,unlisted/preliminary}
+                        the queue to list
 
 optional arguments:
   -h, --help            show this help message and exit

@@ -31,11 +31,19 @@ DEFAULT_MESSAGE = {
     'comment': 'FYI: bananas!'
 }
 
-QUEUES = [
-    'unlisted_queue/nominated', 'unlisted_queue/pending',
-    'unlisted_queue/preliminary', 'queue/fast', 'queue/nominated',
-    'queue/pending', 'queue/preliminary', 'queue/reviews'
-]
+QUEUES = {
+    'unlisted/nominated': 'unlisted_queue/nominated',
+    'unlisted/pending': 'unlisted_queue/pending',
+    'unlisted/preliminary': 'unlisted_queue/preliminary',
+    'fast': 'queue/fast',
+    'nominated': 'queue/nominated',
+    'pending': 'queue/pending',
+    'preliminary': 'queue/preliminary',
+    'reviews': 'queue/reviews'
+}
+ALL_QUEUES = QUEUES.copy()
+ALL_QUEUES.update({v: v for v in QUEUES.values()})
+DEFAULT_QUEUE = 'nominated'
 
 LOG_SORTKEYS = [
     'date', 'addonname', 'version', 'reviewer', 'action'
@@ -61,11 +69,14 @@ def cmd_info(handler, amo, args):
 def cmd_list(handler, amo, args):
     handler.add_argument('-u', '--url', action='store_true',
                          help='output add-on urls only')
-    handler.add_argument('queue', nargs='?', choices=QUEUES, default=QUEUES[0],
-                         help='the queue name or url to list')
+    handler.add_argument('queue', nargs='?',
+                         choices=ALL_QUEUES.keys(),
+                         metavar="{" + ",".join(sorted(QUEUES.keys())) + "}",
+                         default=DEFAULT_QUEUE,
+                         help='the queue to list')
     args = handler.parse_args(args)
 
-    queue = amo.get_queue(args.queue)
+    queue = amo.get_queue(ALL_QUEUES[args.queue])
 
     if args.url:
         for entry in queue:
