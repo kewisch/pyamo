@@ -10,7 +10,7 @@ from .utils import AMO_EDITOR_BASE
 from urlparse import urljoin
 
 class QueueEntry(object):
-    # pylint: disable=too-few-public-methods
+    # pylint: disable=too-few-public-methods,too-many-instance-attributes
 
     def __init__(self, session, row):
         self.addonnum = row.attrib['data-addon'].replace('addon-', '')
@@ -18,6 +18,7 @@ class QueueEntry(object):
         _, hrefrow, typerow, agerow, _, _, _, _, _ = row.getchildren()
 
         anchor = hrefrow.getchildren()[0]
+        self.addonid = anchor.attrib['href'].split("/")[-1]
 
         self.url = urljoin(AMO_EDITOR_BASE, anchor.attrib['href'])
         self.name = anchor.text.strip()
@@ -27,7 +28,7 @@ class QueueEntry(object):
         self.session = session
 
     def __unicode__(self):
-        return u'%s - %s %s' % (self.age.ljust(10), self.name, self.version)
+        return u'%s - %s %s [%s]' % (self.age.ljust(10), self.name, self.version, self.addonid)
 
     def __str__(self):
         return unicode(self).encode(sys.stdout.encoding, 'replace')
