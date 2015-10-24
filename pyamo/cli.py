@@ -106,6 +106,10 @@ def cmd_get(handler, amo, args):
 
     if args.version:
         argversions = set(args.version)
+        if "latest" in args.version:
+            argversions.remove("latest")
+            argversions.add(review.versions[-1].version)
+
         versions = [v for v in review.versions if v.version in argversions]
         if len(versions) < 1:
             print("Error: could not find version %s" % args.version)

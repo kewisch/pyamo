@@ -117,7 +117,14 @@ optional arguments:
 ```
 
 ### amo get
-Downloads one or more versions to the hard drive for review. Will download both the xpi and the sources and once done extract each package. The files will be saved in a sub-directory named after the addon id in the current (or specified) directory.
+Downloads one or more versions to the hard drive for review. Will download both
+the xpi and the sources and once done extract each package. The files will be
+saved in a sub-directory named after the addon id in the current (or specified)
+directory.
+
+When specifying the version number you can also use the tag `latest` to
+retrieve the latest version. This is useful when specifying multiple versions
+to download.
 
 ```
 usage: amo get [-h] [-o OUTDIR] [-l LIMIT] [-v VERSION] addon
