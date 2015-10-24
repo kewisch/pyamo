@@ -122,9 +122,9 @@ the xpi and the sources and once done extract each package. The files will be
 saved in a sub-directory named after the addon id in the current (or specified)
 directory.
 
-When specifying the version number you can also use the tag `latest` to
-retrieve the latest version. This is useful when specifying multiple versions
-to download.
+When specifying version numbers you can also use the tag `latest` to retrieve
+the latest version and the `previous` tag to get the last accepted version.
+This is useful when specifying multiple versions to download.
 
 ```
 usage: amo get [-h] [-o OUTDIR] [-l LIMIT] [-v VERSION] addon

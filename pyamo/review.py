@@ -20,6 +20,11 @@ from .lzma import SevenZFile
 class Review(object):
     # pylint: disable=too-few-public-methods,too-many-instance-attributes
 
+    REVIEW_STATUS_TO_LAST_ACCEPT = {
+        "Pending Preliminary Review": "Preliminarily Reviewed",
+        "Pending Full Review": "Fully Reviewed"
+    }
+
     def __init__(self, parent, id_or_url):
         if id_or_url.startswith(AMO_BASE):
             addonid = id_or_url.split("/")[-1]
@@ -34,6 +39,24 @@ class Review(object):
         self.actions = []
         self.versions = []
         self.url = '%s/review/%s' % (AMO_EDITOR_BASE, addonid)
+
+    def find_latest_version(self):
+        if len(self.versions):
+            return self.versions[-1]
+        else:
+            return None
+
+    def find_previous_version(self):
+        lateststatus = self.versions[-1].files[0].status
+        findstatus = Review.REVIEW_STATUS_TO_LAST_ACCEPT.get(lateststatus, None)
+
+        if not findstatus:
+            raise Exception("Don't know how to handle review status %s" % lateststatus)
+
+        for version in reversed(self.versions):
+            if len(version.files) and version.files[0].status == findstatus:
+                return version
+        return None
 
     def get(self):
         req = self.session.get(self.url, stream=True, allow_redirects=False)

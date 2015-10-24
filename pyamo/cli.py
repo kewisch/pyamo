@@ -106,9 +106,9 @@ def cmd_get(handler, amo, args):
 
     if args.version:
         argversions = set(args.version)
-        if "latest" in args.version:
-            argversions.remove("latest")
-            argversions.add(review.versions[-1].version)
+
+        replace_version_tag(argversions, "latest", review.find_latest_version())
+        replace_version_tag(argversions, "previous", review.find_previous_version())
 
         versions = [v for v in review.versions if v.version in argversions]
         if len(versions) < 1:
@@ -240,6 +240,14 @@ def cmd_upload(handler, amo, args):
             if len(args.xpi) > 1:
                 print("Cancelling uploads, validation has failed")
             break
+
+def replace_version_tag(argversions, tag, replaceversion):
+    if tag in argversions:
+        argversions.remove(tag)
+        if replaceversion:
+            argversions.add(replaceversion.version)
+        else:
+            print("Warning: could not find %s version" % tag)
 
 def uniq(seq):
     previous = None
