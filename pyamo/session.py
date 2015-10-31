@@ -46,7 +46,12 @@ class AmoSession(requests.Session):
                 return req
 
     def check_login_succeeded(self, req):
-        islogin = req.url.startswith('%s/firefox/users/login' % AMO_BASE)
+        login_url = '%s/firefox/users/login' % AMO_BASE
+        if req.status_code == 302:
+            islogin = req.headers['location'].startswith(login_url)
+        else:
+            islogin = req.url.startswith(login_url)
+
         loginsuccess = False
         doc = None
 
