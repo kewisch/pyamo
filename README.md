@@ -126,8 +126,11 @@ When specifying version numbers you can also use the tag `latest` to retrieve
 the latest version and the `previous` tag to get the last accepted version.
 This is useful when specifying multiple versions to download.
 
+A commonly used option is the diff option `-d`, which automatically gets the
+latest and previous versions. This is useful to compare versions.
+
 ```
-usage: amo get [-h] [-o OUTDIR] [-l LIMIT] [-v VERSION] addon
+usage: amo get [-h] [-o OUTDIR] [-l LIMIT] [-d] [-v VERSION] addon
 
 positional arguments:
   addon                 the addon id or url to get
@@ -138,6 +141,7 @@ optional arguments:
                         output directory for add-ons
   -l LIMIT, --limit LIMIT
                         number of versions to download
+  -d, --diff            shortcut for -v previous -v latest
   -v VERSION, --version VERSION
                         pull a specific version
 ```

@@ -90,7 +90,9 @@ def cmd_get(handler, amo, args):
                          help='output directory for add-ons')
     handler.add_argument('-l', '--limit', type=int, default=1,
                          help='number of versions to download')
-    handler.add_argument('-v', '--version', action='append',
+    handler.add_argument('-d', '--diff', action='store_true',
+                         help='shortcut for -v previous -v latest')
+    handler.add_argument('-v', '--version', action='append', default=[],
                          help='pull a specific version')
     handler.add_argument('addon',
                          help='the addon id or url to get')
@@ -104,7 +106,10 @@ def cmd_get(handler, amo, args):
     else:
         os.mkdir(review.addonid)
 
-    if args.version:
+    if args.diff:
+        args.version.extend(('latest', 'previous'))
+
+    if args.version and len(args.version):
         argversions = set(args.version)
 
         replace_version_tag(argversions, "latest", review.find_latest_version())
