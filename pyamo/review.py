@@ -10,6 +10,7 @@ import lxml.html
 import magic
 import os
 import shutil
+import traceback
 
 from zipfile import ZipFile
 from urlparse import urlparse, urljoin
@@ -134,14 +135,19 @@ class AddonReviewVersion(object):
 
         mime = magic.from_file(self.sourcepath, mime=True)
 
-        if mime == "application/x-7z-compressed":
-            with SevenZFile(self.sourcepath, 'r') as zf:
-                zf.extractall(targetpath)
-        elif mime == "application/zip":
-            with ZipFile(self.sourcepath, 'r') as zf:
-                zf.extractall(targetpath)
-        else:
-            raise Exception("Don't know how to handle %s" % mime)
+        try:
+            if mime == "application/x-7z-compressed":
+                with SevenZFile(self.sourcepath, 'r') as zf:
+                    zf.extractall(targetpath)
+            elif mime == "application/zip":
+                with ZipFile(self.sourcepath, 'r') as zf:
+                    zf.extractall(targetpath)
+            else:
+                print("Don't know how to handle %s, skipping extraction" % mime)
+        except Exception: # pylint: disable=broad-except
+            os.rmdir(targetpath)
+            traceback.print_exc()
+            print("Could not extract sources due to above exception, skipping extraction")
 
     def decide(self, action='prelim', comments=''):
         postdata = {
