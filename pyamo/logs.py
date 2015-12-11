@@ -38,5 +38,5 @@ class LogEntry(object):
         )
 
     def __str__(self):
-        return unicode(self).encode(sys.stdout.encoding, 'replace')
+        return unicode(self).encode(sys.stdout.encoding or "utf-8", 'replace')
 
