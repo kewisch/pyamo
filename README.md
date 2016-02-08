@@ -160,20 +160,23 @@ optional arguments:
 ```
 
 ### amo decide
-Decides on an add-on review. If the message argument is omitted, an editor is opened to write the message.
+Decides on an add-on review. If the message argument is omitted, an editor is
+opened to write the message. If you pass `-` as the addon argument, add-on ids
+will be read through stdin.
 
 ```
-usage: amo decide [-h] [-m MESSAGE]
-           addon {info,comment,reject,prelim,super,public}
+usage: amo decide [-h] [-m MESSAGE] -a
+                  {info,comment,reject,prelim,super,public} [-f]
+                  [addon [addon ...]]
 
 positional arguments:
-  addon                 the addon id or url to decide about
-  {info,comment,reject,prelim,super,public}
-                        the action to execute
+  addon                 the addon id(s) or url(s) to decide about
 
 optional arguments:
   -h, --help            show this help message and exit
   -m MESSAGE, --message MESSAGE
                         comment add to the review
+  -a {info,comment,reject,prelim,super,public}, --action {info,comment,reject,prelim,super,public}
+                        the action to execute
+  -f, --force           Do not wait 3 seconds before executing the action
 ```
-

@@ -143,12 +143,16 @@ def cmd_get(handler, amo, args):
 
 @subcmd('decide')
 def cmd_decide(handler, amo, args):
-    handler.add_argument('-m', '--message', help='comment add to the review')
-    handler.add_argument('addon', help='the addon id or url to decide about')
-    handler.add_argument('action', choices=DEFAULT_MESSAGE.keys(), help='the action to execute')
+    handler.add_argument('-m', '--message',
+                         help='comment add to the review')
+    handler.add_argument('-a', '--action', required=True, choices=DEFAULT_MESSAGE.keys(),
+                         help='the action to execute')
+    handler.add_argument('-f', '--force', action='store_true',
+                         help='Do not wait 3 seconds before executing the action')
+    handler.add_argument('addon', nargs='*',
+                         help='the addon id(s) or url(s) to decide about')
     args = handler.parse_args(args)
 
-    review = amo.get_review(args.addon)
 
     if not args.message:
         editor = os.environ.get('EDITOR', 'vim')
@@ -167,18 +171,33 @@ def cmd_decide(handler, amo, args):
         finally:
             shutil.rmtree(msgdir)
 
-    if args.action not in review.actions:
-        print("Error: Action not valid for this review (%s)" % (",".join(review.actions)))
-        return
+    if (len(args.addon) == 1 and args.addon[0] == '-') or len(args.addon) == 0:
+        try:
+            args.addon = sys.stdin.readlines()
+        except KeyboardInterrupt:
+            return
 
-    version = review.versions[-1]
+    if not args.force:
+        if len(args.addon) > 1:
+            print("Will give %s review to %d add-ons in 3 seconds" % len(args.addon))
+        else:
+            print("Will give %s review to %s in 3 seconds" % args.addon[0])
+        time.sleep(3)
 
-    print("Giving %s review to %d files in %s %s" % (
-        args.action, len(version.files), review.addonname, version.version
-    ))
-    time.sleep(3)
+    for addon in args.addon:
+        review = amo.get_review(addon.strip())
+        if args.action not in review.actions:
+            actions = ",".join(review.actions)
+            print("Error: Action not valid for reviewing %s (%s)" % (review.addonname, actions))
+            continue
 
-    version.decide(args.action, args.message)
+        version = review.versions[-1]
+
+        print("Giving %s review to %d files in %s %s" % (
+            args.action, len(version.files), review.addonname, version.version
+        ))
+        version.decide(args.action, args.message)
+
     print("Done")
 
 @subcmd('logs')
