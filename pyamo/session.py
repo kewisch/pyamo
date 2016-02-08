@@ -37,7 +37,8 @@ class AmoSession(requests.Session):
                 pickle.dump(requests.utils.dict_from_cookiejar(self.cookies), fdr)
 
     def request(self, method, url, *args, **kwargs):
-        kwargs['timeout'] = (10.0, 10.0)
+        if 'timeout' not in kwargs:
+            kwargs['timeout'] = (10.0, 10.0)
 
         while True:
             req = super(AmoSession, self).request(method, url, *args, **kwargs)
