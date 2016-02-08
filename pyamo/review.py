@@ -24,6 +24,7 @@ class Review(object):
     REVIEW_STATUS_TO_LAST_ACCEPT = {
         "Pending Preliminary Review": ("Preliminarily Reviewed",),
         "Pending Full Review": ("Fully Reviewed",),
+        "Awaiting Review": ("Fully Reviewed",),
         "Rejected": ("Fully Reviewed", "Preliminarily Reviewed")
     }
 
