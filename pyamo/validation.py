@@ -70,6 +70,9 @@ class ValidationReport(object):
             print(wrapper.fill(parser.unescape("".join(message['description']))) + "\n")
 
     def __str__(self):
+        return self.__unicode__().encode('utf-8')
+
+    def __unicode__(self):
         if not self.completed:
             res = "Validation in progress for %s\n" % self.addonid
             res += "Full report at %s" % self.report_url
