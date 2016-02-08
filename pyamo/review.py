@@ -9,6 +9,7 @@ import cgi
 import lxml.html
 import magic
 import os
+import re
 import shutil
 import traceback
 
@@ -88,14 +89,18 @@ class Review(object):
             self.versions.append(AddonReviewVersion(self, head, head.getnext()))
 
 class AddonReviewVersion(object):
+    # pylint: disable=too-many-instance-attributes
+
     def __init__(self, parent, head, body):
         self.parent = parent
         self.session = parent.session
 
         self.sources = None
         self.sourcepath = None
+        self.sourcefilename = None
         self.version = None
         self.files = []
+        self.apps = []
 
         self._init_head(head)
         self._init_body(body)
@@ -114,39 +119,62 @@ class AddonReviewVersion(object):
         if len(sourcelink):
             self.sources = urljoin(AMO_BASE, sourcelink[0].attrib['href'])
 
+        appnodes = body.xpath(csspath('.files > ul > li > .app-icon'))
+        if len(appnodes):
+            appre = re.compile(r'ed-sprite-(\w+)')
+            for node in appnodes:
+                matches = appre.search(node.attrib['class'])
+                if matches:
+                    self.apps.append(matches.group(1))
+
     def savesources(self, targetpath, chunksize=16384):
         if self.sources:
             req = self.session.get(self.sources, stream=True)
 
             _, params = cgi.parse_header(req.headers['content-disposition'])
-            filename = params['filename']
 
-            self.sourcepath = os.path.join(targetpath, filename)
+            self.sourcefilename = params['filename']
+            base, ext = os.path.splitext(params['filename'])
+            if ext == ".gz":
+                _, tarext = os.path.splitext(base)
+                if tarext == ".tar":
+                    ext = ".tar.gz"
+
+            self.sourcepath = os.path.join(targetpath, self.version, "sources" + ext)
+            sourcedir = os.path.dirname(self.sourcepath)
+            if not os.path.exists(sourcedir):
+                os.mkdir(sourcedir)
+
             with open(self.sourcepath, 'w') as fd:
                 for chunk in req.iter_content(chunksize):
                     fd.write(chunk)
 
     def extractsources(self, targetpath):
         if not self.sourcepath:
-            self.savesources(os.path.basename(targetpath))
+            self.savesources(targetpath)
 
-        if os.path.exists(targetpath):
-            shutil.rmtree(targetpath)
-        os.mkdir(targetpath)
+        extractpath = os.path.join(targetpath, self.version, "src")
+
+        if os.path.exists(extractpath):
+            shutil.rmtree(extractpath)
+        try:
+            os.makedirs(extractpath)
+        except OSError:
+            pass
 
         mime = magic.from_file(self.sourcepath, mime=True)
 
         try:
             if mime == "application/x-7z-compressed":
                 with SevenZFile(self.sourcepath, 'r') as zf:
-                    zf.extractall(targetpath)
+                    zf.extractall(extractpath)
             elif mime == "application/zip":
                 with ZipFile(self.sourcepath, 'r') as zf:
-                    zf.extractall(targetpath)
+                    zf.extractall(extractpath)
             else:
                 print("Don't know how to handle %s, skipping extraction" % mime)
         except Exception: # pylint: disable=broad-except
-            os.rmdir(targetpath)
+            os.rmdir(extractpath)
             traceback.print_exc()
             print("Could not extract sources due to above exception, skipping extraction")
 
@@ -166,12 +194,30 @@ class AddonReviewVersion(object):
         return req.status_code == 302
 
 class AddonVersionFile(object):
+    # pylint: disable=too-many-instance-attributes
+
+    OS_LABEL_TO_SHORTNAME = {
+        'Linux': 'linux',
+        'Mac OS X': 'mac',
+        'Windows': 'windows',
+        'All Platforms': 'all',
+        'Android': 'android'
+    }
+
     def __init__(self, parent, fileinfo):
         self.parent = parent
         self.session = parent.session
 
         infourl = fileinfo.xpath(csspath('.editors-install'))
         self.url = infourl[0].attrib['href']
+        self.platforms = [
+            self.OS_LABEL_TO_SHORTNAME[platform]
+            for platform in infourl[0].text.split(" / ")
+        ]
+
+        if len(set(("linux", "mac", "windows")) - set(self.platforms)) == 0:
+            # This is close enough to "all"
+            self.platforms = ["all"]
 
         statusdiv = fileinfo.xpath(csspath('.light > div'))
         self.status = statusdiv[0].text.strip()
@@ -189,19 +235,32 @@ class AddonVersionFile(object):
         else:
             return self.session.get(self.url, stream=True)
 
+    @property
+    def _platformsuffix(self):
+        return "-" + "-".join(self.platforms) if len(self.parent.files) > 1 else ""
+
     def extract(self, targetpath):
         if not self.savedpath:
-            self.save(os.path.basename(targetpath))
+            self.save(targetpath)
 
-        if os.path.exists(targetpath):
-            shutil.rmtree(targetpath)
-        os.mkdir(targetpath)
+        xpidir = "xpi" + self._platformsuffix
+        extractpath = os.path.join(targetpath, self.parent.version, xpidir)
+        try:
+            os.makedirs(os.path.dirname(extractpath))
+        except OSError:
+            pass
 
         with ZipFile(self.savedpath, 'r') as zf:
-            zf.extractall(targetpath)
+            zf.extractall(extractpath)
 
     def save(self, targetpath, chunksize=16384):
-        self.savedpath = os.path.join(targetpath, self.filename)
+        xpifile = "addon%s.xpi" % (self._platformsuffix)
+        self.savedpath = os.path.join(targetpath, self.parent.version, xpifile)
+
+        try:
+            os.makedirs(os.path.dirname(self.savedpath))
+        except OSError:
+            pass
 
         with open(self.savedpath, 'wb') as fd:
             for chunk in self.session.get(self.url, stream=True).iter_content(chunksize):

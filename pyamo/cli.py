@@ -124,22 +124,20 @@ def cmd_get(handler, amo, args):
         versions = review.versions[-args.limit:]
 
     for version in versions:
-        print('Getting version %s %s' % (review.addonid, version.version))
+        platforms = ", ".join(version.apps)
+        print('Getting version %s %s [%s]' % (review.addonid, version.version, platforms))
         for fileobj in version.files:
-            print('\tGetting file %s' % fileobj.filename)
-            xpioutdir = os.path.join(addonpath, fileobj.filename.replace('.xpi', ''))
-
+            fileplatforms = ", ".join(fileobj.platforms)
+            print('\tGetting file %s [%s]' % (fileobj.filename, fileplatforms))
             fileobj.save(addonpath)
-            fileobj.extract(xpioutdir)
+            fileobj.extract(addonpath)
 
         if version.sources:
             sys.stdout.write('\tGetting sources')
 
             version.savesources(addonpath)
-            print(' ' + os.path.basename(version.sourcepath))
-
-            sourceoutdir = os.path.splitext(version.sourcepath)[0]
-            version.extractsources(sourceoutdir)
+            print(' ' + version.sourcefilename)
+            version.extractsources(addonpath)
 
 @subcmd('decide')
 def cmd_decide(handler, amo, args):
