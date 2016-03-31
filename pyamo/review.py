@@ -16,6 +16,8 @@ import traceback
 from zipfile import ZipFile
 from urlparse import urlparse, urljoin
 
+from mozprofile import FirefoxProfile
+
 from .utils import AMO_BASE, AMO_EDITOR_BASE, csspath
 from .lzma import SevenZFile
 
@@ -158,6 +160,7 @@ class AddonReviewVersion(object):
 
         if os.path.exists(extractpath):
             shutil.rmtree(extractpath)
+
         try:
             os.makedirs(extractpath)
         except OSError:
@@ -228,7 +231,7 @@ class AddonVersionFile(object):
         self.filename = urlpathparts[-1]
         self.addonid = urlpathparts[-2]
         self.savedpath = None
-
+        self.profile = None
 
     def get(self):
         if self.savedpath:
@@ -266,3 +269,28 @@ class AddonVersionFile(object):
         with open(self.savedpath, 'wb') as fd:
             for chunk in self.session.get(self.url, stream=True).iter_content(chunksize):
                 fd.write(chunk)
+
+    def createprofile(self, targetpath, delete=False):
+        if not self.savedpath:
+            self.save(targetpath)
+
+        profiledir = "profile" + self._platformsuffix
+        profilepath = os.path.join(targetpath, self.parent.version, profiledir)
+        if delete and os.path.exists(profilepath):
+            shutil.rmtree(profilepath)
+
+        # TODO non-firefox, multiple files
+        profileparams = {
+            "profile": profilepath,
+            "addons": [self.savedpath],
+            "preferences": {
+                "xpinstall.signatures.required": False,
+
+                # Enable browser toolbox to monitor network requests
+                "devtools.chrome.enabled": True,
+                "devtools.debugger.remote-enabled": True
+            },
+            "restore": False
+        }
+        self.profile = FirefoxProfile(**profileparams)
+        return self.profile

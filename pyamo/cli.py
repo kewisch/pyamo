@@ -20,7 +20,7 @@ import httplib
 
 from arghandler import subcmd, ArgumentHandler
 from .service import AddonsService
-from .utils import RE_VERSION_BETA
+from .utils import find_binary, runprofile, RE_VERSION_BETA
 
 DEFAULT_MESSAGE = {
     'public': 'Your add-on submission has been approved.',
@@ -101,6 +101,12 @@ def cmd_get(handler, amo, args):
                          help='number of versions to download')
     handler.add_argument('-d', '--diff', action='store_true',
                          help='shortcut for -v previous -v latest')
+    handler.add_argument('-p', '--profile', action='store_true',
+                         help='create a profile for each add-on version')
+    handler.add_argument('-r', '--run', action='store_true',
+                         help='run the application in addition to creating a profile')
+    handler.add_argument('--binary',
+                         help='path to the binary to run, e.g. Firefox')
     handler.add_argument('-v', '--version', action='append', default=[],
                          help='pull a specific version')
     handler.add_argument('addon',
@@ -115,8 +121,11 @@ def cmd_get(handler, amo, args):
     else:
         os.mkdir(review.addonid)
 
+    if args.run:
+        args.profile = True
+
     if args.diff:
-        args.version.extend(('latest', 'previous'))
+        args.version.extend(('previous', 'latest'))
 
     if args.version and len(args.version):
         argversions = set(args.version)
@@ -140,6 +149,9 @@ def cmd_get(handler, amo, args):
             print('\tGetting file %s [%s]' % (fileobj.filename, fileplatforms))
             fileobj.save(addonpath)
             fileobj.extract(addonpath)
+            if args.profile:
+                print('\tCreating profile [%s]' % fileplatforms)
+                fileobj.createprofile(addonpath)
 
         if version.sources:
             sys.stdout.write('\tGetting sources')
@@ -147,6 +159,47 @@ def cmd_get(handler, amo, args):
             version.savesources(addonpath)
             print(' ' + version.sourcefilename)
             version.extractsources(addonpath)
+
+
+    if args.run:
+        print('Running applicaton for %s %s' % (review.addonid, versions[-1].version))
+        if not args.binary:
+            print("Warning: you should be running unreviewed extensions in a VM for safety")
+            args.binary = find_binary("firefox")
+
+        runprofile(args.binary, versions[-1].files[-1])
+
+@subcmd('run')
+def cmd_run(handler, amo, args):
+    handler.add_argument('-o', '--outdir', default=os.getcwd(),
+                         help='output directory for add-ons')
+    handler.add_argument('-c', '--clear', action='store_true',
+                         help='clear the profile if it exists')
+    handler.add_argument('--binary',
+                         help='path to the binary to run, e.g. Firefox')
+    handler.add_argument('addon', help='the addon id to run')
+    handler.add_argument('version', help='the addon version to run')
+    args = handler.parse_args(args)
+
+    review = amo.get_review(args.addon)
+
+    argversions = [args.version]
+
+    replace_version_tag(argversions, "latest", review.find_latest_version())
+    replace_version_tag(argversions, "previous", review.find_previous_version())
+
+    version = next((v for v in review.versions if v.version in argversions))
+
+    addonpath = os.path.join(args.outdir, review.addonid)
+
+    version.savedpath = os.path.join(addonpath, version.version, "addon.xpi")
+    fileobj = version.files[0]
+    fileobj.createprofile(addonpath, delete=args.clear)
+
+    if not args.binary:
+        print("Warning: you should be running unreviewed extensions in a VM for safety")
+        args.binary = find_binary("firefox")
+    runprofile(args.binary, fileobj)
 
 @subcmd('decide')
 def cmd_decide(handler, amo, args):

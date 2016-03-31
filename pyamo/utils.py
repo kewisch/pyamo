@@ -8,7 +8,10 @@ from __future__ import print_function
 import cssselect
 import os
 import re
+import sys
 from pytz import timezone
+
+from mozrunner import FirefoxRunner
 
 # set AMO_HOST=adddons.allizom.org to use staging
 AMO_HOST = os.environ['AMO_HOST'] if 'AMO_HOST' in os.environ else 'addons.mozilla.org'
@@ -43,3 +46,106 @@ def flagstr(obj, name, altname=None):
         return "[%s]" % (altname or name)
     else:
         return ""
+
+
+def find_in_path(filename, path=os.environ['PATH']):
+    dirs = path.split(os.pathsep)
+    for dirname in dirs:
+        if os.path.isfile(os.path.join(dirname, filename)):
+            return os.path.join(dirname, filename)
+        if os.name == 'nt' or sys.platform == 'cygwin':
+            if os.path.isfile(os.path.join(dirname, filename + ".exe")):
+                return os.path.join(dirname, filename + ".exe")
+    return None
+
+# pylint: disable=too-many-locals,too-many-branches
+def find_binary(name):
+    """Finds the binary path"""
+    # Code taken from an old mozrunner
+
+    app_name = name[0].upper() + name[1:]
+    binary = None
+    if sys.platform in ('linux2', 'sunos5', 'solaris') \
+            or sys.platform.startswith('freebsd'):
+        binary = find_in_path(name)
+    elif os.name == 'nt' or sys.platform == 'cygwin':
+
+        # find the default executable from the windows registry
+        try:
+            import _winreg
+        except ImportError:
+            pass
+        else:
+            sam_flags = [0]
+            # KEY_WOW64_32KEY etc only appeared in 2.6+, but that's OK as
+            # only 2.6+ has functioning 64bit builds.
+            if hasattr(_winreg, "KEY_WOW64_32KEY"):
+                if "64 bit" in sys.version:
+                    # a 64bit Python should also look in the 32bit registry
+                    sam_flags.append(_winreg.KEY_WOW64_32KEY)
+                else:
+                    # possibly a 32bit Python on 64bit Windows, so look in
+                    # the 64bit registry incase there is a 64bit app.
+                    sam_flags.append(_winreg.KEY_WOW64_64KEY)
+            for sam_flag in sam_flags:
+                try:
+                    # assumes self.app_name is defined, as it should be for
+                    # implementors
+                    keyname = r"Software\Mozilla\Mozilla %s" % app_name
+                    sam = _winreg.KEY_READ | sam_flag
+                    app_key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, keyname, 0, sam)
+                    version, _ = _winreg.QueryValueEx(app_key, "CurrentVersion")
+                    version_key = _winreg.OpenKey(app_key, version + r"\Main")
+                    path, _ = _winreg.QueryValueEx(version_key, "PathToExe")
+                    return path
+                except _winreg.error:
+                    pass
+
+        # search for the binary in the path
+        binary = find_in_path(name)
+        if sys.platform == 'cygwin':
+            program_files = os.environ['PROGRAMFILES']
+        else:
+            program_files = os.environ['ProgramFiles']
+
+        if binary is None:
+            binpaths = [
+                (program_files, 'Mozilla Firefox', 'firefox.exe'),
+                (os.environ.get("ProgramFiles(x86)"), 'Mozilla Firefox', 'firefox.exe'),
+                (program_files, 'Nightly', 'firefox.exe'),
+                (os.environ.get("ProgramFiles(x86)"), 'Nightly', 'firefox.exe'),
+                (program_files, 'Aurora', 'firefox.exe'),
+                (os.environ.get("ProgramFiles(x86)"), 'Aurora', 'firefox.exe')
+            ]
+            for binpath in binpaths:
+                path = os.path.join(*binpath)
+                if os.path.isfile(path):
+                    binary = path
+                    break
+    elif sys.platform == 'darwin':
+        # Look for the application bundle in the user's home directory
+        # or the system-wide /Applications directory.  If we don't find
+        # it in one of those locations, we move on to the next possible
+        # bundle name.
+        appdir = os.path.join("~/Applications/%s.app" % app_name)
+        if not os.path.isdir(appdir):
+            appdir = "/Applications/%s.app" % app_name
+        if os.path.isdir(appdir):
+            # Look for a binary with any of the possible binary names
+            # inside the application bundle.
+            binpath = os.path.join(appdir,
+                                   "Contents/MacOS/%s-bin" % name)
+            if os.path.isfile(binpath):
+                binary = binpath
+
+    if binary is None:
+        raise Exception('Could not locate your binary, you will need to set it.')
+    return binary
+
+def runprofile(binary, fileobj):
+    try:
+        runner = FirefoxRunner(binary=binary, profile=fileobj.profile)
+        runner.start()
+        runner.wait()
+    except KeyboardInterrupt:
+        pass
