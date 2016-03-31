@@ -68,6 +68,8 @@ def cmd_info(handler, amo, args):
 def cmd_list(handler, amo, args):
     handler.add_argument('-u', '--url', action='store_true',
                          help='output add-on urls only')
+    handler.add_argument('-i', '--ids', action='store_true',
+                         help='output add-on ids only')
     handler.add_argument('queue', nargs='?',
                          choices=ALL_QUEUES.keys(),
                          metavar="{" + ",".join(sorted(QUEUES.keys())) + "}",
@@ -75,9 +77,16 @@ def cmd_list(handler, amo, args):
                          help='the queue to list')
     args = handler.parse_args(args)
 
+    if args.url and args.ids:
+        print("Error: can't specify both ids and urls for display")
+        return
+
     queue = amo.get_queue(ALL_QUEUES[args.queue])
 
-    if args.url:
+    if args.ids:
+        for entry in queue:
+            print(entry.addonid)
+    elif args.url:
         for entry in queue:
             print(entry.url)
     else:
@@ -212,9 +221,15 @@ def cmd_logs(handler, amo, args):
                          help='sort by the given key')
     handler.add_argument('-u', '--url', action='store_true',
                          help='output add-on urls only')
+    handler.add_argument('-i', '--ids', action='store_true',
+                         help='output add-on ids only')
     handler.add_argument('logs', nargs='?', default=REVIEW_LOGS[0], choices=REVIEW_LOGS,
                          help='the type of logs to retrieve')
     args = handler.parse_args(args)
+
+    if args.url and args.ids:
+        print("Error: can't specify both ids and urls for display")
+        return
 
     logs = amo.get_logs(args.logs, start=args.start, end=args.end,
                         query=args.query, limit=args.limit)
@@ -222,7 +237,9 @@ def cmd_logs(handler, amo, args):
     if args.key:
         logs = sorted(logs, key=lambda entry: getattr(entry, args.key))
 
-    if args.url:
+    if args.ids:
+        logs = uniq([entry.addonid for entry in logs])
+    elif args.url:
         logs = uniq([entry.url for entry in logs])
 
     print(*logs, sep="\n")

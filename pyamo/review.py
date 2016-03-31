@@ -33,7 +33,8 @@ class Review(object):
         if id_or_url.startswith(AMO_BASE):
             addonid = id_or_url.split("/")[-1]
         else:
-            addonid = id_or_url
+            # Strip slashes, sometimes added due to bash directory completion
+            addonid = id_or_url.rstrip('/')
 
         self.parent = parent
         self.session = parent.session
