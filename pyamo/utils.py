@@ -9,7 +9,10 @@ import cssselect
 import os
 import re
 import sys
+import argparse
+
 from pytz import timezone
+from ConfigParser import ConfigParser, NoOptionError
 
 from mozrunner import FirefoxRunner
 
@@ -47,6 +50,40 @@ def flagstr(obj, name, altname=None):
     else:
         return ""
 
+def parse_args_with_defaults(handler, cmd, args):
+    config = ConfigParser()
+    if sys.platform.startswith("win"):
+        configfilepath = os.path.expanduser("~/amorc.ini")
+    else:
+        configfilepath = os.path.expanduser('~/.amorc')
+    config.read(configfilepath)
+
+    # Read the defaults from the config file, if it does not exist just parse
+    # options as usual.
+    try:
+        defaults = config.get('defaults', cmd).split(" ")
+    except NoOptionError:
+        return handler.parse_args(args)
+
+    # Create an argument parser that takes just the options, but no defaults or
+    # requirements.  Setting the kwargs is a bit fragile, but since we can't
+    # just copy an ArgumentParser this is the best alternative.
+    defhandler = argparse.ArgumentParser(add_help=False, argument_default=argparse.SUPPRESS)
+    for action in handler._actions: # pylint: disable=protected-access
+        if action.option_strings:
+            kwargs = {"action": action.__class__}
+            if action.nargs:
+                kwargs['nargs'] = action.nargs
+            if action.choices:
+                kwargs['choices'] = action.choices
+
+            defhandler.add_argument(*action.option_strings, **kwargs)
+
+    # Parse the found defaults with this argument parser and use them as
+    # defaults for the real handler.
+    defargs = defhandler.parse_args(defaults)
+    handler.set_defaults(**vars(defargs))
+    return handler.parse_args(args)
 
 def find_in_path(filename, path=os.environ['PATH']):
     dirs = path.split(os.pathsep)

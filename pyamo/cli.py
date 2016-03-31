@@ -20,7 +20,7 @@ import httplib
 
 from arghandler import subcmd, ArgumentHandler
 from .service import AddonsService
-from .utils import find_binary, runprofile, RE_VERSION_BETA
+from .utils import find_binary, runprofile, parse_args_with_defaults, RE_VERSION_BETA
 
 DEFAULT_MESSAGE = {
     'public': 'Your add-on submission has been approved.',
@@ -75,7 +75,7 @@ def cmd_list(handler, amo, args):
                          metavar="{" + ",".join(sorted(QUEUES.keys())) + "}",
                          default=DEFAULT_QUEUE,
                          help='the queue to list')
-    args = handler.parse_args(args)
+    args = parse_args_with_defaults(handler, 'list', args)
 
     if args.url and args.ids:
         print("Error: can't specify both ids and urls for display")
@@ -92,7 +92,7 @@ def cmd_list(handler, amo, args):
     else:
         print(*queue, sep="\n")
 
-# pylint: disable=too-many-branches
+# pylint: disable=too-many-branches,too-many-statements
 @subcmd('get')
 def cmd_get(handler, amo, args):
     handler.add_argument('-o', '--outdir', default=os.getcwd(),
@@ -111,7 +111,12 @@ def cmd_get(handler, amo, args):
                          help='pull a specific version')
     handler.add_argument('addon',
                          help='the addon id or url to get')
-    args = handler.parse_args(args)
+
+    args = parse_args_with_defaults(handler, 'get', args)
+
+    args.outdir = os.path.expanduser(args.outdir)
+    if os.path.abspath(os.path.expanduser(args.outdir)) != os.getcwd():
+        print("Warning: the specified output directory is not the current directory")
 
     review = amo.get_review(args.addon)
     addonpath = os.path.join(args.outdir, review.addonid)
@@ -179,7 +184,11 @@ def cmd_run(handler, amo, args):
                          help='path to the binary to run, e.g. Firefox')
     handler.add_argument('addon', help='the addon id to run')
     handler.add_argument('version', help='the addon version to run')
-    args = handler.parse_args(args)
+    args = parse_args_with_defaults(handler, 'run', args)
+
+    args.outdir = os.path.expanduser(args.outdir)
+    if os.path.abspath(os.path.expanduser(args.outdir)) != os.getcwd():
+        print("Warning: the specified output directory is not the current directory")
 
     review = amo.get_review(args.addon)
 
@@ -211,7 +220,7 @@ def cmd_decide(handler, amo, args):
                          help='Do not wait 3 seconds before executing the action')
     handler.add_argument('addon', nargs='*',
                          help='the addon id(s) or url(s) to decide about')
-    args = handler.parse_args(args)
+    args = parse_args_with_defaults(handler, 'decide', args)
 
 
     if not args.message:
@@ -282,7 +291,7 @@ def cmd_logs(handler, amo, args):
                          help='output add-on ids only')
     handler.add_argument('logs', nargs='?', default=REVIEW_LOGS[0], choices=REVIEW_LOGS,
                          help='the type of logs to retrieve')
-    args = handler.parse_args(args)
+    args = parse_args_with_defaults(handler, 'logs', args)
 
     if args.url and args.ids:
         print("Error: can't specify both ids and urls for display")
@@ -316,7 +325,7 @@ def cmd_upload(handler, amo, args):
                          help='add sources to this submission')
     handler.add_argument('addon',
                          help='the addon id to upload')
-    args = handler.parse_args(args)
+    args = parse_args_with_defaults(handler, 'upload', args)
 
     for platform, xpi in args.xpi:
         print("Uploading %s for platform %s" % (xpi, platform))
