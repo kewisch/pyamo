@@ -178,7 +178,11 @@ def cmd_decide(handler, amo, args):
         finally:
             shutil.rmtree(msgdir)
 
-    if (len(args.addon) == 1 and args.addon[0] == '-') or len(args.addon) == 0:
+    if len(args.addon) == 0:
+        print("Error: Nothing to give %s review" % args.action)
+        return
+
+    if len(args.addon) == 1 and args.addon[0] == '-':
         try:
             args.addon = sys.stdin.readlines()
         except KeyboardInterrupt:
@@ -186,9 +190,9 @@ def cmd_decide(handler, amo, args):
 
     if not args.force:
         if len(args.addon) > 1:
-            print("Will give %s review to %d add-ons in 3 seconds" % len(args.addon))
+            print("Will give %s review to %d add-ons in 3 seconds" % (args.action, len(args.addon)))
         else:
-            print("Will give %s review to %s in 3 seconds" % args.addon[0])
+            print("Will give %s review to %s in 3 seconds" % (args.action, args.addon[0]))
         time.sleep(3)
 
     for addon in args.addon:
