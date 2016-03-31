@@ -15,10 +15,10 @@ options, just the sub-commands:
 
 ```
 usage: amo [-h] [-c COOKIES] [-d {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
-           {info,logs,get,list,upload,decide} ...
+           {info,run,logs,get,list,upload,decide} ...
 
 positional arguments:
-  {info,logs,get,list,upload,decide}
+  {info,run,logs,get,list,upload,decide}
   cargs                 arguments for the subcommand
 
 optional arguments:
@@ -26,6 +26,22 @@ optional arguments:
   -c COOKIES, --cookies COOKIES
                         the file to save the session cookies to
   -d {DEBUG,INFO,WARNING,ERROR,CRITICAL}, --debug {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+```
+
+### Configuration
+The amo utility supports setting some configuration values. The file
+needs to be placed in `~/.amorc` on unix, or `%HOME%/amorc.ini` on Windows.
+
+Currently the only configuration is being able to specify defaults for the
+subcommands, which is done in the `[defaults]` section. You can only specify
+defaults for optional arguents. Here are some examples:
+
+```ini
+[defaults]
+out = --outdir ~/path/to/amofolder --binary ~/path/to/run_in_vm.py
+run = --outdir ~/path/to/amofolder --binary ~/path/to/run_in_vm.py
+logs = -k reviewer
+decide = -f
 ```
 
 ### Developer commands
@@ -46,7 +62,9 @@ amo upload lightning \
 
 Here is the full help text, in case you also need to upload sources:
 ```
-usage: amo upload [-h] [-v] -x {all,linux,mac,win,android} XPI [-b] [-s SOURCE] addon
+usage: amo upload [-h] [-v] -x {all,linux,mac,win,android} XPI [-b]
+                  [-s SOURCE]
+                  addon
 
 positional arguments:
   addon                 the addon id to upload
@@ -72,7 +90,7 @@ the url, or a slightly shortened variant:
 * Listed: `fast`, `nominated`, `pending`, `preliminary`
 
 ```
-usage: amo list [-h] [-u]
+usage: amo list [-h] [-u] [-i]
                 [{fast,nominated,pending,preliminary,unlisted/nominated,unlisted/pending,unlisted/preliminary}]
 
 positional arguments:
@@ -82,6 +100,7 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -u, --url             output add-on urls only
+  -i, --ids             output add-on ids only
 ```
 
 ### amo logs
@@ -95,7 +114,7 @@ parameter.
 
 ```
 usage: amo logs [-h] [-l LIMIT] [-s START] [-e END] [-q QUERY]
-                [-k {date,addonname,version,reviewer,action}] [-u]
+                [-k {date,addonname,version,reviewer,action}] [-u] [-i]
                 [{reviewlog}]
 
 positional arguments:
@@ -113,7 +132,7 @@ optional arguments:
   -k {date,addonname,version,reviewer,action}, --key {date,addonname,version,reviewer,action}
                         sort by the given key
   -u, --url             output add-on urls only
-
+  -i, --ids             output add-on ids only
 ```
 
 ### amo get
@@ -130,7 +149,9 @@ A commonly used option is the diff option `-d`, which automatically gets the
 latest and previous versions. This is useful to compare versions.
 
 ```
-usage: amo get [-h] [-o OUTDIR] [-l LIMIT] [-d] [-v VERSION] addon
+usage: amo get [-h] [-o OUTDIR] [-l LIMIT] [-d] [-p] [-r] [--binary BINARY]
+               [-v VERSION]
+               addon
 
 positional arguments:
   addon                 the addon id or url to get
@@ -142,6 +163,9 @@ optional arguments:
   -l LIMIT, --limit LIMIT
                         number of versions to download
   -d, --diff            shortcut for -v previous -v latest
+  -p, --profile         create a profile for each add-on version
+  -r, --run             run the application in addition to creating a profile
+  --binary BINARY       path to the binary to run, e.g. Firefox
   -v VERSION, --version VERSION
                         pull a specific version
 ```
