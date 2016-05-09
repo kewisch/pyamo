@@ -5,14 +5,17 @@
 
 from __future__ import print_function
 
-import cssselect
 import os
 import re
 import sys
 import argparse
+import cssselect
+import fxa.core
+import fxa.oauth
 
 from pytz import timezone
 from ConfigParser import ConfigParser, NoOptionError
+from six.moves.urllib.parse import urlparse
 
 from mozrunner import FirefoxRunner
 
@@ -20,6 +23,7 @@ from mozrunner import FirefoxRunner
 AMO_HOST = os.environ['AMO_HOST'] if 'AMO_HOST' in os.environ else 'addons.mozilla.org'
 
 AMO_BASE = "https://%s/en-US" % AMO_HOST
+AMO_API_BASE = "https://%s/api/v3" % AMO_HOST
 AMO_EDITOR_BASE = '%s/editors' % AMO_BASE
 AMO_DEVELOPER_BASE = '%s/developers' % AMO_BASE
 AMO_TIMEZONE = timezone("America/Los_Angeles")
@@ -49,6 +53,18 @@ def flagstr(obj, name, altname=None):
         return "[%s]" % (altname or name)
     else:
         return ""
+
+# pylint: disable=too-many-arguments
+def get_fxa_code(api_url, oauth_url, scope, client_id, username, password):
+    url = urlparse(oauth_url)
+    audience = "%s://%s/" % (url.scheme, url.netloc)
+
+    client = fxa.core.Client(server_url=api_url)
+    session = client.login(username, password)
+
+    bid = session.get_identity_assertion(audience)
+    oauth_client = fxa.oauth.Client(server_url=oauth_url)
+    return oauth_client.authorize_code(bid, scope, client_id)
 
 def parse_args_with_defaults(handler, cmd, args):
     config = ConfigParser()

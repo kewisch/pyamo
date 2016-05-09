@@ -17,6 +17,7 @@ setup(
     url = "https://github.com/kewisch/pyamo",
     packages = ['pyamo'],
     install_requires = [
+        'PyFxA',
         'python-magic',
         'requests',
         'lxml',

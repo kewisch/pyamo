@@ -6,12 +6,13 @@
 from __future__ import print_function
 
 import os
+import json
 import pickle
 
 import lxml.html
 import requests
 
-from .utils import AMO_BASE
+from .utils import AMO_BASE, AMO_API_BASE, get_fxa_code
 
 class AmoSession(requests.Session):
     def __init__(self, service, login_prompter, cookiefile=None, *args, **kwargs):
@@ -84,18 +85,21 @@ class AmoSession(requests.Session):
 
         username, password = self.login_prompter()
 
-        postdata = {
-            'username': username,
-            'password': password,
-            'rememberme': 'on'
+        fxaconfig = json.loads(logindoc.body.attrib['data-fxa-config'])
+        api_host = fxaconfig['oauthHost'].replace('oauth', 'api')
+
+        code = get_fxa_code(api_host, fxaconfig['oauthHost'], fxaconfig['scope'],
+                            fxaconfig['clientId'], username, password)
+
+        redirdata = {
+            # The second part of the state is /en-US/firefox in base64
+            'state': "%s:L2VuLVVTL2ZpcmVmb3gv" % fxaconfig['state'],
+            'action': 'signin',
+            'code': code
         }
-        for form in logindoc.forms:
-            if 'csrfmiddlewaretoken' in form.inputs:
-                postdata['csrfmiddlewaretoken'] = form.inputs['csrfmiddlewaretoken'].value
-                break
 
-        req = super(AmoSession, self).request('post',
-                                              '%s/firefox/users/login' % AMO_BASE,
-                                              data=postdata, allow_redirects=False)
+        req = super(AmoSession, self).request('get',
+                                              '%s/accounts/authenticate/' % AMO_API_BASE,
+                                              params=redirdata, allow_redirects=False)
+
         return req.status_code == 302
-
