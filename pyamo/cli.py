@@ -116,15 +116,16 @@ def cmd_get(handler, amo, args):
 
     args.outdir = os.path.expanduser(args.outdir)
     if os.path.abspath(os.path.expanduser(args.outdir)) != os.getcwd():
-        print("Warning: the specified output directory is not the current directory")
+        print("Warning: the specified output directory is not the current"
+              " directory, please cd %s" % args.outdir)
 
     review = amo.get_review(args.addon)
     addonpath = os.path.join(args.outdir, review.addonid)
 
-    if os.path.exists(review.addonid):
+    if os.path.exists(addonpath):
         print("Warning: add-on directory already exists and may contain stale files")
     else:
-        os.mkdir(review.addonid)
+        os.mkdir(addonpath)
 
     if args.run:
         args.profile = True
