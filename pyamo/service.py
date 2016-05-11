@@ -50,7 +50,7 @@ class AddonsService(object):
             thislen = len(things)
 
             if lastlen == thislen:
-                raise Exception('Page at %s did not contain any items' % url)
+                break
 
             if thislen > limit:
                 things = things[:limit]
