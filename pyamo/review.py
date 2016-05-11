@@ -5,21 +5,22 @@
 
 from __future__ import print_function
 
-import cgi
-import lxml.html
-import magic
 import os
 import re
+import cgi
 import shutil
 import traceback
 
 from zipfile import ZipFile
 from urlparse import urlparse, urljoin
-
 from mozprofile import FirefoxProfile
 
 from .utils import AMO_BASE, AMO_EDITOR_BASE, csspath
 from .lzma import SevenZFile
+
+import lxml.html
+import magic
+
 
 class Review(object):
     # pylint: disable=too-few-public-methods,too-many-instance-attributes
@@ -91,6 +92,7 @@ class Review(object):
         for head in heads:
             self.versions.append(AddonReviewVersion(self, head, head.getnext()))
 
+
 class AddonReviewVersion(object):
     # pylint: disable=too-many-instance-attributes
 
@@ -110,7 +112,7 @@ class AddonReviewVersion(object):
 
     def _init_head(self, head):
         args = head.iterchildren().next().text.encode('utf-8').strip().split(" ")
-        _, self.version, _, month, day, year = filter(None, args) # pylint: disable=bad-builtin
+        _, self.version, _, month, day, year = filter(None, args)  # pylint: disable=bad-builtin
         self.date = '%s %s %s' % (month, day, year)
 
     def _init_body(self, body):
@@ -177,7 +179,7 @@ class AddonReviewVersion(object):
                     zf.extractall(extractpath)
             else:
                 print("Don't know how to handle %s, skipping extraction" % mime)
-        except Exception: # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             os.rmdir(extractpath)
             traceback.print_exc()
             print("Could not extract sources due to above exception, skipping extraction")
@@ -189,13 +191,14 @@ class AddonReviewVersion(object):
             'comments': comments,
             'canned_response': '',
             'addon_files': [f.addonid for f in self.files],
-            'operating_systems': '', # TODO
-            'applications': '' # TODO
+            'operating_systems': '',  # TODO
+            'applications': ''  # TODO
         }
 
         url = '%s/review/%s' % (AMO_EDITOR_BASE, self.parent.addonid)
         req = self.session.post(url, data=postdata, allow_redirects=False)
         return req.status_code == 302
+
 
 class AddonVersionFile(object):
     # pylint: disable=too-many-instance-attributes

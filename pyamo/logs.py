@@ -6,11 +6,12 @@
 import sys
 import urllib
 
-from .utils import AMO_EDITOR_BASE, AMO_TIMEZONE
-
 from urlparse import urljoin
 from dateutil import parser as dateparser
 from tzlocal import get_localzone
+
+from .utils import AMO_EDITOR_BASE, AMO_TIMEZONE
+
 
 class LogEntry(object):
     # pylint: disable=too-few-public-methods,too-many-instance-attributes
@@ -39,4 +40,3 @@ class LogEntry(object):
 
     def __str__(self):
         return unicode(self).encode(sys.stdout.encoding or "utf-8", 'replace')
-

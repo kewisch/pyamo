@@ -5,11 +5,13 @@
 
 from __future__ import print_function
 
-from .utils import flagstr, AMO_DEVELOPER_BASE
 from urlparse import urljoin
 from HTMLParser import HTMLParser
 from textwrap import TextWrapper
 from collections import defaultdict
+
+from .utils import flagstr, AMO_DEVELOPER_BASE
+
 
 class ValidationReport(object):
     # pylint: disable=too-many-instance-attributes
@@ -35,7 +37,6 @@ class ValidationReport(object):
             self.compat = validation['compatibility_summary']
             self.signing = validation['signing_summary']
             self.messages = validation['messages']
-
 
             self.errors = validation['errors']
             self.warnings = validation['warnings']

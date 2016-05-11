@@ -50,6 +50,7 @@ LOG_SORTKEYS = [
 
 REVIEW_LOGS = ['reviewlog']
 
+
 @subcmd('info')
 def cmd_info(handler, amo, args):
     handler.add_argument('addon', help='the addon id or url to show info about')
@@ -63,6 +64,7 @@ def cmd_info(handler, amo, args):
             print("\t\tFile #%s (%s): %s" % (fileobj.addonid, fileobj.status, fileobj.url))
         if version.sources:
             print("\t\tSources: %s" % version.sources)
+
 
 @subcmd('list')
 def cmd_list(handler, amo, args):
@@ -91,6 +93,7 @@ def cmd_list(handler, amo, args):
             print(entry.url)
     else:
         print(*queue, sep="\n")
+
 
 # pylint: disable=too-many-branches,too-many-statements
 @subcmd('get')
@@ -166,7 +169,6 @@ def cmd_get(handler, amo, args):
             print(' ' + version.sourcefilename)
             version.extractsources(addonpath)
 
-
     if args.run:
         print('Running applicaton for %s %s' % (review.addonid, versions[-1].version))
         if not args.binary:
@@ -174,6 +176,7 @@ def cmd_get(handler, amo, args):
             args.binary = find_binary("firefox")
 
         runprofile(args.binary, versions[-1].files[-1])
+
 
 @subcmd('run')
 def cmd_run(handler, amo, args):
@@ -211,6 +214,7 @@ def cmd_run(handler, amo, args):
         args.binary = find_binary("firefox")
     runprofile(args.binary, fileobj)
 
+
 @subcmd('decide')
 def cmd_decide(handler, amo, args):
     handler.add_argument('-m', '--message',
@@ -222,7 +226,6 @@ def cmd_decide(handler, amo, args):
     handler.add_argument('addon', nargs='*',
                          help='the addon id(s) or url(s) to decide about')
     args = parse_args_with_defaults(handler, 'decide', args)
-
 
     if not args.message:
         editor = os.environ.get('EDITOR', 'vim')
@@ -273,6 +276,7 @@ def cmd_decide(handler, amo, args):
         version.decide(args.action, args.message)
 
     print("Done")
+
 
 @subcmd('logs')
 def cmd_logs(handler, amo, args):
@@ -347,6 +351,7 @@ def cmd_upload(handler, amo, args):
                 print("Cancelling uploads, validation has failed")
             break
 
+
 def replace_version_tag(argversions, tag, replaceversion):
     if tag in argversions:
         argversions.remove(tag)
@@ -355,12 +360,14 @@ def replace_version_tag(argversions, tag, replaceversion):
         else:
             print("Warning: could not find %s version" % tag)
 
+
 def uniq(seq):
     previous = None
     for value in seq:
         if previous != value:
             yield value
             previous = value
+
 
 def init_logging(level, _):
     logging.basicConfig()
@@ -372,10 +379,12 @@ def init_logging(level, _):
     if level == logging.DEBUG:
         httplib.HTTPConnection.debuglevel = 1
 
+
 def login_prompter_impl():
     username = raw_input("Username: ").strip()
     password = getpass.getpass("Password: ").strip()
     return username, password
+
 
 def main():
     amo = AddonsService(login_prompter=login_prompter_impl)

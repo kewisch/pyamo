@@ -14,6 +14,7 @@ import requests
 
 from .utils import AMO_BASE, AMO_API_BASE, get_fxa_code
 
+
 class AmoSession(requests.Session):
     def __init__(self, service, login_prompter, cookiefile=None, *args, **kwargs):
         self.service = service
@@ -29,7 +30,7 @@ class AmoSession(requests.Session):
                 with open(cookiefile) as fdr:
                     cookies = requests.utils.cookiejar_from_dict(pickle.load(fdr))
                     self.cookies = cookies
-            except IOError, _:
+            except IOError:
                 pass
 
     def persist(self):

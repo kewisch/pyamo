@@ -9,15 +9,15 @@ import os
 import re
 import sys
 import argparse
+
+from ConfigParser import ConfigParser, NoOptionError
+from six.moves.urllib.parse import urlparse
+from pytz import timezone
+from mozrunner import FirefoxRunner
+
 import cssselect
 import fxa.core
 import fxa.oauth
-
-from pytz import timezone
-from ConfigParser import ConfigParser, NoOptionError
-from six.moves.urllib.parse import urlparse
-
-from mozrunner import FirefoxRunner
 
 # set AMO_HOST=adddons.allizom.org to use staging
 AMO_HOST = os.environ['AMO_HOST'] if 'AMO_HOST' in os.environ else 'addons.mozilla.org'
@@ -45,14 +45,17 @@ UPLOAD_PLATFORM = {
     'android': '7'
 }
 
+
 def csspath(query):
     return cssselect.HTMLTranslator().css_to_xpath(query)
+
 
 def flagstr(obj, name, altname=None):
     if name in obj and obj[name]:
         return "[%s]" % (altname or name)
     else:
         return ""
+
 
 # pylint: disable=too-many-arguments
 def get_fxa_code(api_url, oauth_url, scope, client_id, username, password):
@@ -65,6 +68,7 @@ def get_fxa_code(api_url, oauth_url, scope, client_id, username, password):
     bid = session.get_identity_assertion(audience)
     oauth_client = fxa.oauth.Client(server_url=oauth_url)
     return oauth_client.authorize_code(bid, scope, client_id)
+
 
 def parse_args_with_defaults(handler, cmd, args):
     config = ConfigParser()
@@ -85,7 +89,7 @@ def parse_args_with_defaults(handler, cmd, args):
     # requirements.  Setting the kwargs is a bit fragile, but since we can't
     # just copy an ArgumentParser this is the best alternative.
     defhandler = argparse.ArgumentParser(add_help=False, argument_default=argparse.SUPPRESS)
-    for action in handler._actions: # pylint: disable=protected-access
+    for action in handler._actions:  # pylint: disable=protected-access
         if action.option_strings:
             kwargs = {"action": action.__class__}
             if action.nargs:
@@ -101,6 +105,7 @@ def parse_args_with_defaults(handler, cmd, args):
     handler.set_defaults(**vars(defargs))
     return handler.parse_args(args)
 
+
 def find_in_path(filename, path=os.environ['PATH']):
     dirs = path.split(os.pathsep)
     for dirname in dirs:
@@ -110,6 +115,7 @@ def find_in_path(filename, path=os.environ['PATH']):
             if os.path.isfile(os.path.join(dirname, filename + ".exe")):
                 return os.path.join(dirname, filename + ".exe")
     return None
+
 
 # pylint: disable=too-many-locals,too-many-branches
 def find_binary(name):
@@ -194,6 +200,7 @@ def find_binary(name):
     if binary is None:
         raise Exception('Could not locate your binary, you will need to set it.')
     return binary
+
 
 def runprofile(binary, fileobj):
     try:

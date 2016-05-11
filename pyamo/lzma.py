@@ -9,6 +9,7 @@ import os
 
 from py7zlib import Archive7z
 
+
 class SevenZFile(object):
     # pylint: disable=too-few-public-methods
 

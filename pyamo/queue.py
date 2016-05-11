@@ -5,9 +5,10 @@
 
 import sys
 
+from urlparse import urljoin
+
 from .utils import AMO_EDITOR_BASE
 
-from urlparse import urljoin
 
 class QueueEntry(object):
     # pylint: disable=too-few-public-methods,too-many-instance-attributes

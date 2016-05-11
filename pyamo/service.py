@@ -8,7 +8,12 @@ from __future__ import print_function
 import sys
 import os
 import time
-import lxml.html
+
+from urlparse import urljoin
+from datetime import timedelta
+from tzlocal import get_localzone
+from dateutil import parser as dateparser
+from requests.exceptions import HTTPError
 
 from .queue import QueueEntry
 from .logs import LogEntry
@@ -18,11 +23,8 @@ from .validation import ValidationReport
 from .utils import AMO_BASE, AMO_EDITOR_BASE, AMO_DEVELOPER_BASE, \
     AMO_TIMEZONE, VALIDATION_WAIT, UPLOAD_PLATFORM, csspath
 
-from urlparse import urljoin
-from tzlocal import get_localzone
-from datetime import timedelta
-from dateutil import parser as dateparser
-from requests.exceptions import HTTPError
+import lxml.html
+
 
 class AddonsService(object):
     def __init__(self, login_prompter=None, cookiefile=None):
@@ -58,7 +60,6 @@ class AddonsService(object):
             url = urljoin(AMO_EDITOR_BASE, nexturl) if nexturl else None
             params = None
 
-
         return things
 
     def get_queue(self, name_or_url):
@@ -66,7 +67,6 @@ class AddonsService(object):
             name = "/".join(name_or_url.split("/")[-2])
         else:
             name = name_or_url
-
 
         def page(queue, doc):
             queuerows = doc.xpath(csspath('#addon-queue > tbody > .addon-row'))
@@ -115,7 +115,6 @@ class AddonsService(object):
 
         url = '%s/%s' % (AMO_EDITOR_BASE, loglist)
         return self._unpaginate(url, page, params=payload, limit=limit)
-
 
     def upload(self, addonid, xpi, platform='all'):
         if platform not in UPLOAD_PLATFORM:
@@ -174,7 +173,7 @@ class AddonsService(object):
                 final_version_url = urljoin(AMO_DEVELOPER_BASE, ver_exists[0].attrib['href'])
                 add_version_url = final_version_url + "/add"
             else:
-                final_version_url = None # will fill this in later
+                final_version_url = None  # will fill this in later
                 add_version_url = '%s/addon/%s/versions/add' % (AMO_DEVELOPER_BASE, addonid)
 
             payload = {
