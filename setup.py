@@ -26,7 +26,8 @@ setup(
         'pylzma',
         'pytz',
         'tzlocal',
-        'python-dateutil'
+        'python-dateutil',
+        'mozrunner',
     ],
     entry_points = {
         'console_scripts': ['amo=pyamo.cli:main']
