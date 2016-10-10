@@ -29,7 +29,9 @@ class Review(object):
         "Pending Preliminary Review": ("Preliminarily Reviewed",),
         "Pending Full Review": ("Fully Reviewed",),
         "Awaiting Review": ("Fully Reviewed",),
-        "Rejected": ("Fully Reviewed", "Preliminarily Reviewed")
+        "Rejected": ("Fully Reviewed", "Preliminarily Reviewed"),
+        "Preliminarily Reviewed": ("Preliminarily Reviewed",),
+        "Fully Reviewed": ("Fully Reviewed",)
     }
 
     def __init__(self, parent, id_or_url):
