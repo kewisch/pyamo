@@ -125,7 +125,7 @@ def cmd_get(handler, amo, args):
     args.outdir = os.path.expanduser(args.outdir)
     if os.path.abspath(os.path.expanduser(args.outdir)) != os.getcwd():
         print("Warning: the specified output directory is not the current"
-              " directory, please cd %s" % args.outdir)
+              " directory, please cd %s" % os.path.join(args.outdir, args.addon))
 
     review = amo.get_review(args.addon)
     addonpath = os.path.join(args.outdir, review.addonid)
