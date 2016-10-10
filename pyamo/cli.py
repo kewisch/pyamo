@@ -70,6 +70,8 @@ def cmd_info(handler, amo, args):
 def cmd_list(handler, amo, args):
     handler.add_argument('-u', '--url', action='store_true',
                          help='output add-on urls only')
+    handler.add_argument('-n', '--numericid', action='store_true',
+                         help='output numeric add-on ids only')
     handler.add_argument('-i', '--ids', action='store_true',
                          help='output add-on ids only')
     handler.add_argument('queue', nargs='?',
@@ -91,6 +93,9 @@ def cmd_list(handler, amo, args):
     elif args.url:
         for entry in queue:
             print(entry.url)
+    elif args.numericid:
+        for entry in queue:
+            print(entry.addonnum)
     else:
         print(*queue, sep="\n")
 

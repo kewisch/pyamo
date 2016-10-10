@@ -90,7 +90,7 @@ the url, or a slightly shortened variant:
 * Listed: `fast`, `nominated`, `pending`, `preliminary`
 
 ```
-usage: amo list [-h] [-u] [-i]
+usage: amo list [-h] [-u] [-n] [-i]
                 [{fast,nominated,pending,preliminary,unlisted/nominated,unlisted/pending,unlisted/preliminary}]
 
 positional arguments:
@@ -100,6 +100,7 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -u, --url             output add-on urls only
+  -n, --numericid       output numeric add-on ids only
   -i, --ids             output add-on ids only
 ```
 
