@@ -34,15 +34,12 @@ DEFAULT_MESSAGE = {
 QUEUES = {
     'unlisted/nominated': 'unlisted_queue/nominated',
     'unlisted/pending': 'unlisted_queue/pending',
-    'unlisted/preliminary': 'unlisted_queue/preliminary',
-    'fast': 'queue/fast',
-    'nominated': 'queue/nominated',
-    'pending': 'queue/pending',
-    'preliminary': 'queue/preliminary'
+    'new': 'queue/new',
+    'updates': 'queue/updates'
 }
 ALL_QUEUES = QUEUES.copy()
 ALL_QUEUES.update({v: v for v in QUEUES.values()})
-DEFAULT_QUEUE = 'nominated'
+DEFAULT_QUEUE = 'new'
 
 LOG_SORTKEYS = [
     'date', 'addonname', 'version', 'reviewer', 'action'
@@ -144,8 +141,8 @@ def cmd_get(handler, amo, args):
     if args.version and len(args.version):
         argversions = set(args.version)
 
-        replace_version_tag(argversions, "latest", review.find_latest_version())
-        replace_version_tag(argversions, "previous", review.find_previous_version())
+        replace_version_tag(argversions, "latest", lambda: review.find_latest_version())
+        replace_version_tag(argversions, "previous", lambda: review.find_previous_version())
 
         versions = [v for v in review.versions if v.version in argversions]
         if len(versions) < 1:
@@ -357,9 +354,10 @@ def cmd_upload(handler, amo, args):
             break
 
 
-def replace_version_tag(argversions, tag, replaceversion):
+def replace_version_tag(argversions, tag, replaceversionlazy):
     if tag in argversions:
         argversions.remove(tag)
+        replaceversion = replaceversionlazy()
         if replaceversion:
             argversions.add(replaceversion.version)
         else:
