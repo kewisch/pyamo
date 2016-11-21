@@ -197,7 +197,7 @@ class AddonsService(object):
 
             req = self.session.post(add_version_url, files=payload,
                                     allow_redirects=False, timeout=(60.0, 60.0))
-            return final_version_url or req.json()['url']
+            return final_version_url or urljoin(AMO_BASE, req.json()['url'])
         except HTTPError, e:
             if e.response.status_code != 400:
                 raise e
