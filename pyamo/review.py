@@ -26,12 +26,9 @@ class Review(object):
     # pylint: disable=too-few-public-methods,too-many-instance-attributes
 
     REVIEW_STATUS_TO_LAST_ACCEPT = {
-        "Pending Preliminary Review": ("Preliminarily Reviewed",),
-        "Pending Full Review": ("Fully Reviewed",),
-        "Awaiting Review": ("Fully Reviewed",),
-        "Rejected": ("Fully Reviewed", "Preliminarily Reviewed"),
-        "Preliminarily Reviewed": ("Preliminarily Reviewed",),
-        "Fully Reviewed": ("Fully Reviewed",)
+        "Awaiting Review": ("Approved",),
+        "Rejected": ("Approved",),
+        "Approved": ("Approved",),
     }
 
     def __init__(self, parent, id_or_url):
