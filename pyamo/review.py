@@ -80,7 +80,7 @@ class Review(object):
         doc = lxml.html.parse(req.raw).getroot()
 
         self.versions = []
-        self.addonname = doc.xpath(csspath('#breadcrumbs > li:last-child'))[0].text
+        self.addonname = doc.xpath(csspath('h2.addon span:first-of-type'))[0].text
         self.token = doc.xpath(csspath('form input[name="csrfmiddlewaretoken"]'))[0].attrib['value']
 
         self.actions = [
