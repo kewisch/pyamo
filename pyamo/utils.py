@@ -10,7 +10,7 @@ import re
 import sys
 import argparse
 
-from ConfigParser import ConfigParser, NoOptionError
+from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 from six.moves.urllib.parse import urlparse
 from pytz import timezone
 from mozrunner import FirefoxRunner
@@ -25,6 +25,7 @@ AMO_HOST = os.environ['AMO_HOST'] if 'AMO_HOST' in os.environ else 'addons.mozil
 AMO_BASE = "https://%s/en-US" % AMO_HOST
 AMO_API_BASE = "https://%s/api/v3" % AMO_HOST
 AMO_EDITOR_BASE = '%s/editors' % AMO_BASE
+AMO_ADMIN_BASE = '%s/admin' % AMO_BASE
 AMO_DEVELOPER_BASE = '%s/developers' % AMO_BASE
 AMO_TIMEZONE = timezone("America/Los_Angeles")
 
@@ -82,7 +83,7 @@ def parse_args_with_defaults(handler, cmd, args):
     # options as usual.
     try:
         defaults = config.get('defaults', cmd).split(" ")
-    except NoOptionError:
+    except (NoOptionError, NoSectionError):
         return handler.parse_args(args)
 
     # Create an argument parser that takes just the options, but no defaults or
