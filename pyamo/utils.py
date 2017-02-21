@@ -8,13 +8,12 @@ from __future__ import print_function
 import os
 import re
 import sys
-import argparse
 
 from ConfigParser import ConfigParser, NoOptionError, NoSectionError
-from six.moves.urllib.parse import urlparse
 from pytz import timezone
 from mozrunner import FirefoxRunner
 
+import argparse
 import cssselect
 import fxa.core
 import fxa.oauth
@@ -58,17 +57,29 @@ def flagstr(obj, name, altname=None):
         return ""
 
 
-# pylint: disable=too-many-arguments
-def get_fxa_code(api_url, oauth_url, scope, client_id, username, password):
-    url = urlparse(oauth_url)
-    audience = "%s://%s/" % (url.scheme, url.netloc)
+class FXASession(object):
+    # pylint: disable=too-few-public-methods
+    def __init__(self, api_url, fxaconfig, username, password):
+        self.scope = fxaconfig['scope']
+        self.client_id = fxaconfig['clientId']
+        self.username = username
+        self.password = password
 
-    client = fxa.core.Client(server_url=api_url)
-    session = client.login(username, password)
+        self.client = fxa.core.Client(server_url=api_url)
+        self.oauth_client = fxa.oauth.Client(server_url=fxaconfig['oauthHost'])
+        self.session = None
 
-    bid = session.get_identity_assertion(audience)
-    oauth_client = fxa.oauth.Client(server_url=oauth_url)
-    return oauth_client.authorize_code(bid, scope, client_id)
+    def __enter__(self):
+        self.session = self.client.login(self.username, self.password)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.session.destroy_session()
+        self.session = None
+        return False
+
+    def authorize_code(self):
+        return self.oauth_client.authorize_code(self.session, self.scope, self.client_id)
 
 
 def parse_args_with_defaults(handler, cmd, args):

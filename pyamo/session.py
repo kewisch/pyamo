@@ -12,7 +12,7 @@ import pickle
 import lxml.html
 import requests
 
-from .utils import AMO_BASE, AMO_API_BASE, get_fxa_code
+from .utils import AMO_BASE, AMO_API_BASE, FXASession
 
 
 class AmoSession(requests.Session):
@@ -89,18 +89,18 @@ class AmoSession(requests.Session):
         fxaconfig = json.loads(logindoc.body.attrib['data-fxa-config'])
         api_host = fxaconfig['oauthHost'].replace('oauth', 'api')
 
-        code = get_fxa_code(api_host, fxaconfig['oauthHost'], fxaconfig['scope'],
-                            fxaconfig['clientId'], username, password)
+        with FXASession(api_host, fxaconfig, username, password) as session:
+            code = session.authorize_code()
 
-        redirdata = {
-            # The second part of the state is /en-US/firefox in base64
-            'state': "%s:L2VuLVVTL2ZpcmVmb3gv" % fxaconfig['state'],
-            'action': 'signin',
-            'code': code
-        }
+            redirdata = {
+                # The second part of the state is /en-US/firefox in base64
+                'state': "%s:L2VuLVVTL2ZpcmVmb3gv" % fxaconfig['state'],
+                'action': 'signin',
+                'code': code
+            }
 
-        req = super(AmoSession, self).request('get',
-                                              '%s/accounts/authenticate/' % AMO_API_BASE,
-                                              params=redirdata, allow_redirects=False)
+            req = super(AmoSession, self).request('get',
+                                                  '%s/accounts/authenticate/' % AMO_API_BASE,
+                                                  params=redirdata, allow_redirects=False)
 
         return req.status_code == 302
