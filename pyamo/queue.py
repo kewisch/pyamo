@@ -16,7 +16,7 @@ class QueueEntry(object):
     def __init__(self, session, row):
         self.addonnum = row.attrib['data-addon'].replace('addon-', '')
 
-        _, hrefrow, typerow, agerow, _, _  = row.getchildren()
+        _, hrefrow, typerow, agerow, _, _ = row.getchildren()
 
         anchor = hrefrow.getchildren()[0]
         self.addonid = anchor.attrib['href'].split("/")[-1]
