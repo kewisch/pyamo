@@ -132,7 +132,7 @@ class AddonsService(object):
                 'upload': (os.path.basename(xpi), xpifd, 'application/x-xpinstall')
             }
 
-            uploadurl = '%s/addon/%s/upload' % (AMO_DEVELOPER_BASE, addonid)
+            uploadurl = '%s/addon/%s/upload-listed' % (AMO_DEVELOPER_BASE, addonid)
 
             req = self.session.post(uploadurl, files=payload, allow_redirects=False)
             if req.status_code != 302:
@@ -171,19 +171,15 @@ class AddonsService(object):
                                    "[contains(text(), 'Version %s')]" % report.version)
             if len(ver_exists):
                 final_version_url = urljoin(AMO_DEVELOPER_BASE, ver_exists[0].attrib['href'])
-                add_version_url = final_version_url + "/add"
+                add_version_url = final_version_url + "/submit-file/"
             else:
                 final_version_url = None  # will fill this in later
-                add_version_url = '%s/addon/%s/versions/add' % (AMO_DEVELOPER_BASE, addonid)
+                add_version_url = '%s/addon/%s/versions/submit/' % (AMO_DEVELOPER_BASE, addonid)
 
             payload = {
                 'csrfmiddlewaretoken': (None, token),
                 'upload': (None, report.reportid),
-
-                # The initial upload needs the first, adding versions the
-                # second. Just pass both to save a few lines of code.
                 'supported_platforms': (None, UPLOAD_PLATFORM[platform]),
-                'platform': (None, UPLOAD_PLATFORM[platform])
             }
 
             if beta:
@@ -197,7 +193,13 @@ class AddonsService(object):
 
             req = self.session.post(add_version_url, files=payload,
                                     allow_redirects=False, timeout=(60.0, 60.0))
-            return final_version_url or urljoin(AMO_BASE, req.json()['url'])
+
+            if not final_version_url:
+                locparts = req.headers['location'].split("/")
+                final_version_url = urljoin(AMO_DEVELOPER_BASE,
+                                            "addon/%s/versions/%s" % (addonid, locparts[-2]))
+
+            return final_version_url
         except HTTPError, e:
             if e.response.status_code != 400:
                 raise e
