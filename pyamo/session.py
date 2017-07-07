@@ -84,12 +84,10 @@ class AmoSession(requests.Session):
                                                   stream=True)
             logindoc = lxml.html.parse(req.raw).getroot()
 
-        username, password = self.login_prompter()
-
         fxaconfig = json.loads(logindoc.body.attrib['data-fxa-config'])
         api_host = fxaconfig['oauthHost'].replace('oauth', 'api')
 
-        with FXASession(api_host, fxaconfig, username, password) as session:
+        with FXASession(api_host, fxaconfig, self.login_prompter) as session:
             code = session.authorize_code()
 
             redirdata = {

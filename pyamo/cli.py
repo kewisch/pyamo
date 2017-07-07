@@ -383,10 +383,14 @@ def init_logging(level, _):
         httplib.HTTPConnection.debuglevel = 1
 
 
-def login_prompter_impl():
-    username = raw_input("Username: ").strip()
-    password = getpass.getpass("Password: ").strip()
-    return username, password
+def login_prompter_impl(unblock_code=False):
+    if unblock_code:
+        code = raw_input("Unblock Code: ").strip()
+        return code
+    else:
+        username = raw_input("Username: ").strip()
+        password = getpass.getpass("Password: ").strip()
+        return username, password
 
 
 def main():

@@ -17,6 +17,7 @@ import argparse
 import cssselect
 import fxa.core
 import fxa.oauth
+import fxa.errors
 
 # set AMO_HOST=adddons.allizom.org to use staging
 AMO_HOST = os.environ['AMO_HOST'] if 'AMO_HOST' in os.environ else 'addons.mozilla.org'
@@ -59,18 +60,28 @@ def flagstr(obj, name, altname=None):
 
 class FXASession(object):
     # pylint: disable=too-few-public-methods
-    def __init__(self, api_url, fxaconfig, username, password):
+    def __init__(self, api_url, fxaconfig, login_prompter):
         self.scope = fxaconfig['scope']
         self.client_id = fxaconfig['clientId']
-        self.username = username
-        self.password = password
+        self.login_prompter = login_prompter
 
         self.client = fxa.core.Client(server_url=api_url)
         self.oauth_client = fxa.oauth.Client(server_url=fxaconfig['oauthHost'])
         self.session = None
 
     def __enter__(self):
-        self.session = self.client.login(self.username, self.password)
+        username, password = self.login_prompter()
+
+        try:
+            self.session = self.client.login(username, password)
+        except fxa.errors.ClientError, e:
+            if e.error == "Request blocked":
+                self.client.send_unblock_code(username)
+                code = self.login_prompter(unblock_code=True)
+                self.session = self.client.login(username, password, unblock_code=code)
+            else:
+                raise e
+
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
