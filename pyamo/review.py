@@ -46,6 +46,7 @@ class Review(object):
         self.actions = []
         self.versions = []
         self.url = '%s/review/%s' % (AMO_EDITOR_BASE, addonid)
+        self.page = 0
 
     def find_latest_version(self):
         if len(self.versions):
@@ -66,7 +67,15 @@ class Review(object):
         return None
 
     def get(self):
-        req = self.session.get(self.url, stream=True, allow_redirects=False)
+        self.versions = []
+        self.page = 0
+        self.get_version_page(1)
+
+    def get_next_page(self):
+        return self.get_version_page(self.page + 1)
+
+    def get_version_page(self, page=1):
+        req = self.session.get(self.url + "?page=%d" % page, stream=True, allow_redirects=False)
 
         if req.status_code == 302:
             if 'messages' not in req.cookies:
@@ -79,7 +88,6 @@ class Review(object):
 
         doc = lxml.html.parse(req.raw).getroot()
 
-        self.versions = []
         self.addonname = doc.xpath(csspath('h2.addon span:first-of-type'))[0].text
         self.token = doc.xpath(csspath('form input[name="csrfmiddlewaretoken"]'))[0].attrib['value']
 
@@ -87,9 +95,37 @@ class Review(object):
             i.attrib['value'] for i in doc.xpath(csspath('[name="action"]'))
         ]
 
+        first_page_path = "#review-files-paginate > .pagination > li > strong:first-of-type"
+        is_first_page = doc.xpath(csspath(first_page_path))[0].text == "1"
+
+        if page > 1 and is_first_page:
+            # We've gone over the last page, need to bail early
+            return False
+
         heads = doc.xpath(csspath('#review-files > .listing-header'))
+        versions = []
         for head in heads:
-            self.versions.append(AddonReviewVersion(self, head, head.getnext()))
+            versions.append(AddonReviewVersion(self, head, head.getnext()))
+
+        self.versions = versions + self.versions
+        self.page = page
+        return True
+
+    def get_all_versions(self):
+        incomplete = True
+        while incomplete:
+            incomplete = self.get_next_page()
+
+    def get_versions_until(self, func, default=None):
+        res = default
+        while True:
+            res = func(self.versions, self.page)
+            if res is not False:
+                return res
+
+            if not self.get_next_page():
+                return default
+        return res
 
 
 class AddonReviewVersion(object):

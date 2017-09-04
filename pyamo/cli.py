@@ -140,16 +140,26 @@ def cmd_get(handler, amo, args):
 
     if args.version and len(args.version):
         argversions = set(args.version)
+        replace_version_tag(argversions, "latest", review.find_latest_version)
 
-        replace_version_tag(argversions, "latest", lambda: review.find_latest_version())
-        replace_version_tag(argversions, "previous", lambda: review.find_previous_version())
+        def find_versions(versions, page):
+            replace_version_tag(argversions, "previous", review.find_previous_version, quiet=True)
+            argmatch = [v for v in versions if v.version in argversions]
+            if len(argmatch) == len(argversions):
+                return argmatch
+            else:
+                print("Warning: could not find all requested version on page",
+                      "%d, trying next page" % page)
+                return False
 
-        versions = [v for v in review.versions if v.version in argversions]
-        if len(versions) < 1:
+        versions = review.get_versions_until(find_versions, [])
+
+        if not len(versions):
             print("Error: could not find version %s" % args.version)
             return
 
     else:
+        review.get_versions_until(lambda versions, _: len(versions) >= args.limit)
         versions = review.versions[-args.limit:]
 
     for version in versions:
@@ -200,8 +210,8 @@ def cmd_run(handler, amo, args):
 
     argversions = [args.version]
 
-    replace_version_tag(argversions, "latest", review.find_latest_version())
-    replace_version_tag(argversions, "previous", review.find_previous_version())
+    replace_version_tag(argversions, "latest", review.find_latest_version)
+    replace_version_tag(argversions, "previous", review.find_previous_version)
 
     version = next((v for v in review.versions if v.version in argversions))
 
@@ -354,13 +364,13 @@ def cmd_upload(handler, amo, args):
             break
 
 
-def replace_version_tag(argversions, tag, replaceversionlazy):
+def replace_version_tag(argversions, tag, replaceversionlazy, quiet=False):
     if tag in argversions:
-        argversions.remove(tag)
         replaceversion = replaceversionlazy()
         if replaceversion:
+            argversions.remove(tag)
             argversions.add(replaceversion.version)
-        else:
+        elif not quiet:
             print("Warning: could not find %s version" % tag)
 
 
