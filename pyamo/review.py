@@ -96,7 +96,8 @@ class Review(object):
         ]
 
         first_page_path = "#review-files-paginate > .pagination > li > strong:first-of-type"
-        is_first_page = doc.xpath(csspath(first_page_path))[0].text == "1"
+        first_page_node = doc.xpath(csspath(first_page_path))
+        is_first_page = first_page_node[0].text == "1" if len(first_page_node) else True
 
         if page > 1 and is_first_page:
             # We've gone over the last page, need to bail early
