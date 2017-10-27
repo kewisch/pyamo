@@ -21,6 +21,7 @@ setup(
         'python-magic',
         'requests',
         'lxml',
+        'mozrunner',
         'cssselect',
         'arghandler >=1.0.3',
         'pylzma',
