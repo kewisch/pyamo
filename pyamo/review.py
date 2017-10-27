@@ -251,7 +251,7 @@ class AddonVersionFile(object):
         self.parent = parent
         self.session = parent.session
 
-        infourl = fileinfo.xpath(csspath('.editors-install'))
+        infourl = fileinfo.xpath(csspath('.reviewers-install'))
         self.url = infourl[0].attrib['href']
         self.platforms = [
             self.OS_LABEL_TO_SHORTNAME[platform]
