@@ -86,6 +86,7 @@ class Review(object):
 
             raise Exception(message[1].strip())
 
+        req.raw.decode_content = True
         doc = lxml.html.parse(req.raw).getroot()
 
         self.addonname = doc.xpath(csspath('h2.addon span:first-of-type'))[0].text

@@ -44,6 +44,7 @@ class AddonsService(object):
 
         while url and len(things) < limit:
             req = self.session.get(url, stream=True, params=params)
+            req.raw.decode_content = True
             doc = lxml.html.parse(req.raw).getroot()
             lastlen = len(things)
             nexturl = func(things, doc)
@@ -123,6 +124,7 @@ class AddonsService(object):
         uploadurl = None
         url = '%s/addon/%s/versions' % (AMO_DEVELOPER_BASE, addonid)
         req = self.session.get(url, stream=True)
+        req.raw.decode_content = True
         doc = lxml.html.parse(req.raw).getroot()
         token = doc.xpath(csspath('form input[name="csrfmiddlewaretoken"]'))[0].attrib['value']
 
@@ -164,6 +166,7 @@ class AddonsService(object):
         try:
             url = '%s/addon/%s/versions' % (AMO_DEVELOPER_BASE, addonid)
             req = self.session.get(url, stream=True)
+            req.raw.decode_content = True
             doc = lxml.html.parse(req.raw).getroot()
             token = doc.xpath(csspath('form input[name="csrfmiddlewaretoken"]'))[0].attrib['value']
 

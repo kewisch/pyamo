@@ -61,6 +61,7 @@ class AmoSession(requests.Session):
         while islogin and not loginsuccess:
             if doc is not None:
                 if req.raw:
+                    req.raw.decode_content = True
                     doc = lxml.html.parse(req.raw).getroot()
                 else:
                     doc = lxml.html.fromstring(req.content)
@@ -82,6 +83,7 @@ class AmoSession(requests.Session):
             req = super(AmoSession, self).request('get',
                                                   '%s/firefox/users/login' % AMO_BASE,
                                                   stream=True)
+            req.raw.decode_content = True
             logindoc = lxml.html.parse(req.raw).getroot()
 
         fxaconfig = json.loads(logindoc.body.attrib['data-fxa-config'])
