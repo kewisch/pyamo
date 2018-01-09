@@ -64,7 +64,7 @@ class AddonsService(object):
         return things
 
     def get_queue(self, name_or_url):
-        if name_or_url.startswith(AMO_BASE):
+        if name_or_url.startswith(AMO_BASE) or name_or_url.startswith(AMO_EDITOR_BASE):
             name = "/".join(name_or_url.split("/")[-2])
         else:
             name = name_or_url

@@ -24,7 +24,7 @@ AMO_HOST = os.environ['AMO_HOST'] if 'AMO_HOST' in os.environ else 'addons.mozil
 
 AMO_BASE = "https://%s/en-US" % AMO_HOST
 AMO_API_BASE = "https://%s/api/v3" % AMO_HOST
-AMO_EDITOR_BASE = 'https://reviewers.%s/en-US/editors' % AMO_HOST
+AMO_EDITOR_BASE = 'https://reviewers.%s/en-US/reviewers' % AMO_HOST
 AMO_ADMIN_BASE = '%s/admin' % AMO_BASE
 AMO_DEVELOPER_BASE = '%s/developers' % AMO_BASE
 AMO_TIMEZONE = timezone("America/Los_Angeles")

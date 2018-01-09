@@ -32,7 +32,7 @@ class Review(object):
     }
 
     def __init__(self, parent, id_or_url):
-        if id_or_url.startswith(AMO_BASE):
+        if id_or_url.startswith(AMO_BASE) or id_or_url.startswith(AMO_EDITOR_BASE):
             addonid = id_or_url.split("/")[-1]
         else:
             # Strip slashes, sometimes added due to bash directory completion
@@ -159,7 +159,7 @@ class AddonReviewVersion(object):
 
         sourcelink = body.xpath(csspath('.files > div > a[href]'))
         if len(sourcelink):
-            self.sources = urljoin(AMO_BASE, sourcelink[0].attrib['href'])
+            self.sources = urljoin(AMO_EDITOR_BASE, sourcelink[0].attrib['href'])
 
         appnodes = body.xpath(csspath('.files > ul > li > .app-icon'))
         if len(appnodes):
