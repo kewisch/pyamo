@@ -20,6 +20,7 @@ class AmoSession(requests.Session):
         self.service = service
         self.login_prompter = login_prompter
         self.loginfail = 0
+        self.timeout = None
         super(AmoSession, self).__init__(*args, **kwargs)
         self.load(cookiefile)
 
@@ -40,7 +41,12 @@ class AmoSession(requests.Session):
 
     def request(self, method, url, *args, **kwargs):
         if 'timeout' not in kwargs:
-            kwargs['timeout'] = (10.0, 10.0)
+            if self.timeout:
+                kwargs['timeout'] = (self.timeout, self.timeout)
+            elif url.startswith(AMO_ADMIN_BASE):
+                kwargs['timeout'] = (2.0, 2.0)
+            else:
+                kwargs['timeout'] = (10.0, 10.0)
 
         while True:
             req = super(AmoSession, self).request(method, url, *args, **kwargs)

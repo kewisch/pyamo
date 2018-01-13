@@ -20,12 +20,14 @@ import fxa.oauth
 import fxa.errors
 
 # set AMO_HOST=adddons.allizom.org to use staging
-AMO_HOST = os.environ['AMO_HOST'] if 'AMO_HOST' in os.environ else 'addons.mozilla.org'
+AMO_HOST = os.environ.get('AMO_HOST', 'addons.mozilla.org')
+AMO_INTERNAL_HOST = os.environ.get('AMO_HOST', 'addons-internal.prod.mozaws.net')
 
 AMO_BASE = "https://%s/en-US" % AMO_HOST
+AMO_INTERNAL_BASE = "https://%s/en-US" % AMO_INTERNAL_HOST
 AMO_API_BASE = "https://%s/api/v3" % AMO_HOST
 AMO_EDITOR_BASE = 'https://reviewers.%s/en-US/reviewers' % AMO_HOST
-AMO_ADMIN_BASE = '%s/admin' % AMO_BASE
+AMO_ADMIN_BASE = '%s/admin' % AMO_INTERNAL_BASE
 AMO_DEVELOPER_BASE = '%s/developers' % AMO_BASE
 AMO_TIMEZONE = timezone("America/Los_Angeles")
 

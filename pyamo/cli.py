@@ -409,15 +409,22 @@ def main():
 
     def load_context(args):
         amo.session.load(args.cookies)
+        amo.session.timeout = args.timeout
         return amo
 
     handler = ArgumentHandler()
     handler.add_argument('-c', '--cookies', default=cookiedefault,
                          help='the file to save the session cookies to')
+    handler.add_argument('--timeout', type=int, default=None,
+                         help='timeout for http requests')
     handler.set_logging_argument('-d', '--debug', default_level=logging.WARNING,
                                  config_fxn=init_logging)
-    handler.run(sys.argv[1:], context_fxn=load_context)
-    amo.persist()
+
+    try:
+        handler.run(sys.argv[1:], context_fxn=load_context)
+        amo.persist()
+    except KeyboardInterrupt:
+        pass
 
 
 if __name__ == '__main__':
