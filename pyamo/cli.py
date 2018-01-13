@@ -11,6 +11,7 @@ import os
 import shutil
 import sys
 import time
+import json
 
 import getpass
 import logging
@@ -20,7 +21,9 @@ import httplib
 
 from arghandler import subcmd, ArgumentHandler
 from .service import AddonsService
-from .utils import find_binary, runprofile, parse_args_with_defaults, RE_VERSION_BETA
+from .utils import find_binary, runprofile, parse_args_with_defaults, \
+                   requiresvpn, RE_VERSION_BETA, ADDON_STATE, ADDON_FILE_STATE, \
+                   REV_ADDON_STATE, REV_ADDON_FILE_STATE
 
 DEFAULT_MESSAGE = {
     'public': 'Your add-on submission has been approved.',
@@ -46,6 +49,145 @@ LOG_SORTKEYS = [
 ]
 
 REVIEW_LOGS = ['reviewlog']
+
+
+@subcmd('adminget')
+@requiresvpn
+def cmd_admin(handler, amo, args):
+    handler.add_argument('addon', help='the addon id or url to show info about')
+    handler.add_argument('-b', '--beta', action='store_true', help='include beta releases')
+    handler.add_argument('-f', '--file', action='store_true',
+                         help='output in a format saving status to file')
+    args = handler.parse_args(args)
+
+    admininfo = amo.get_admin_info(args.addon)
+
+    if not args.file:
+        print('Addon %s has state "%s"' % (args.addon, REV_ADDON_STATE[admininfo.status]))
+
+    filedata = {}
+    for ver in reversed(admininfo.versions):
+        if not args.beta and ver.status == ADDON_FILE_STATE['beta']:
+            continue
+
+        if args.file:
+            filedata[ver.fileid] = ver.status
+        else:
+            print(ver)
+
+    if args.file:
+        print(json.dumps({"status": admininfo.status, "files": filedata}, indent=2))
+
+
+@subcmd('adminchange')
+@requiresvpn
+def cmd_adminstatus(handler, amo, args):
+    handler.add_argument('addon', help='the addon id or url to show info about')
+    handler.add_argument('-s', '--status', default=None, help='set the add-on status')
+    handler.add_argument('-a', '--approve', nargs='+', help='set these versions to approved')
+    handler.add_argument('-d', '--disable', nargs='+', help='set these versions to disabled')
+    handler.add_argument('-X', '--disable-all', action='store_true', help='disable all versions')
+    handler.add_argument('-O', '--approve-all', action='store_true', help='approve all versions')
+    handler.add_argument('-f', '--file', help='load states from file')
+    args = handler.parse_args(args)
+
+    admininfo = amo.get_admin_info(args.addon)
+    oldstatus = admininfo.status
+
+    if args.file:
+        # Read from file mode
+        if args.status or args.approve or args.disable or args.disable_all or args.approve_all:
+            print("State change options not valid with -f")
+            return
+
+        with open(args.file) as fp:
+            jsondata = json.loads(fp.read())
+
+        statuschanged = (jsondata['status'] != admininfo.status)
+
+        if statuschanged:
+            print("Changing state %s -> %s" % (
+                ADDON_STATE[admininfo.status], ADDON_STATE[jsondata['status']]
+            ))
+        admininfo.status = jsondata['status']
+
+        files = jsondata['files']
+
+        for version in admininfo.versions:
+            key = str(version.fileid)
+            if key in files:
+                version.status = files[key]
+                if version.changed:
+                    print("Version %s File %s (%s) changing from %s to %s" % (
+                        version.version, version.fileid, version.platform,
+                        REV_ADDON_FILE_STATE.get(version.originalstatus, version.originalstatus),
+                        REV_ADDON_FILE_STATE.get(version.status, version.status)
+                    ))
+
+    else:
+        # Normal mode, use command line arguments to set status
+        args.approve = fixlist(args.approve)
+        args.disable = fixlist(args.disable)
+
+        approveset = set()
+        disableset = set()
+
+        if args.approve_all:
+            approveset.update(admininfo.all_versions)
+            if not args.disable:
+                admininfo.status = ADDON_STATE['approved']
+
+        if args.disable_all:
+            disableset.update(admininfo.all_versions)
+            if not args.approve:
+                admininfo.status = ADDON_STATE['disabled']
+
+        if args.approve:
+            approveset |= set(args.approve)
+            disableset -= set(args.approve)
+        if args.disable:
+            disableset |= set(args.disable)
+            approveset -= set(args.disable)
+
+        admininfo.versions_to_status(approveset, ADDON_FILE_STATE['approved'])
+        admininfo.versions_to_status(disableset, ADDON_FILE_STATE['disabled'])
+
+        if args.status is not None:
+            try:
+                admininfo.status = int(args.status)
+            except ValueError:
+                # Not an int, but a string
+                if args.status not in ADDON_STATE:
+                    print("Invalid add-on state %s" % args.status)
+                    return
+                else:
+                    admininfo.status = ADDON_STATE[args.status]
+
+        statuschanged = (oldstatus != admininfo.status)
+        if statuschanged:
+            print("Changing state for %s: %s -> %s" %
+                  (args.addon, REV_ADDON_STATE[oldstatus], REV_ADDON_STATE[admininfo.status]))
+        else:
+            print("Keeping state for %s: %s" % (args.addon, REV_ADDON_STATE[admininfo.status]))
+
+        if len(disableset):
+            print("Marking these versions disabled: " + ", ".join(disableset))
+        if len(approveset):
+            print("Marking these versions approved: " + ", ".join(approveset))
+
+    # Sanity Check
+    admininfo.checkstatus()
+
+    if not any(version.changed for version in admininfo.versions) and not statuschanged:
+        print("Nothing changed, not sending request")
+        return
+
+    if args.file:
+        print("Last chance to bail out before changes are made (Ctrl+C to quit, enter to continue)")
+        raw_input()
+
+    admininfo.save()
+    print("Done")
 
 
 @subcmd('info')
@@ -380,6 +522,13 @@ def uniq(seq):
         if previous != value:
             yield value
             previous = value
+
+
+def fixlist(arg):
+    if arg and len(arg) == 1 and "," in arg[0]:
+        return arg[0].split(",")
+    else:
+        return arg
 
 
 def init_logging(level, _):

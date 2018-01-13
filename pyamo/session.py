@@ -12,7 +12,7 @@ import pickle
 import lxml.html
 import requests
 
-from .utils import AMO_BASE, AMO_API_BASE, FXASession
+from .utils import AMO_BASE, AMO_API_BASE, AMO_ADMIN_BASE, FXASession
 
 
 class AmoSession(requests.Session):

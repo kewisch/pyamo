@@ -15,6 +15,7 @@ from tzlocal import get_localzone
 from dateutil import parser as dateparser
 from requests.exceptions import HTTPError
 
+from .admin import AdminInfo
 from .queue import QueueEntry
 from .logs import LogEntry
 from .review import Review
@@ -37,6 +38,14 @@ class AddonsService(object):
         review = Review(self, id_or_url)
         review.get()
         return review
+
+    def get_admin_info(self, id_or_url, getall=True):
+        admininfo = AdminInfo(self, id_or_url)
+        if getall:
+            admininfo.get_all_versions()
+        else:
+            admininfo.get()
+        return admininfo
 
     def _unpaginate(self, url, func, params=None, limit=sys.maxint):
         things = []

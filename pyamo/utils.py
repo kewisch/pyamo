@@ -8,6 +8,7 @@ from __future__ import print_function
 import os
 import re
 import sys
+import requests
 
 from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 from pytz import timezone
@@ -47,6 +48,23 @@ UPLOAD_PLATFORM = {
     'win32': '5',
     'android': '7'
 }
+
+ADDON_STATE = {
+  "incomplete": 0,
+  "waiting": 3,
+  "approved": 4,
+  "disabled": 5,
+  "deleted": 11
+}
+REV_ADDON_STATE = {v: k for k, v in ADDON_STATE.items()}
+
+ADDON_FILE_STATE = {
+  "waiting": 1,
+  "approved": 4,
+  "disabled": 5,
+  "beta": 7
+}
+REV_ADDON_FILE_STATE = {v: k for k, v in ADDON_FILE_STATE.items()}
 
 
 def csspath(query):
@@ -93,6 +111,15 @@ class FXASession(object):
 
     def authorize_code(self):
         return self.oauth_client.authorize_code(self.session, self.scope, self.client_id)
+
+
+def requiresvpn(fn):
+    def wrapper(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except requests.exceptions.ConnectTimeout:
+            print("Timed out. Are you connected to VPN?")
+    return wrapper
 
 
 def parse_args_with_defaults(handler, cmd, args):
