@@ -7,7 +7,8 @@ from __future__ import print_function
 
 import sys
 
-from .utils import AMO_BASE, AMO_ADMIN_BASE, AMO_EDITOR_BASE, REV_ADDON_STATE, csspath
+from .utils import AMO_BASE, AMO_ADMIN_BASE, AMO_EDITOR_BASE, REV_ADDON_STATE, \
+                   REV_ADDON_FILE_STATE, csspath
 import lxml.html
 
 
