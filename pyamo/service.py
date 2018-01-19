@@ -34,8 +34,8 @@ class AddonsService(object):
     def persist(self):
         self.session.persist()
 
-    def get_review(self, id_or_url):
-        review = Review(self, id_or_url)
+    def get_review(self, id_or_url, unlisted=False):
+        review = Review(self, id_or_url, unlisted)
         review.get()
         return review
 

@@ -254,6 +254,8 @@ def cmd_get(handler, amo, args):
                          help='run the application in addition to creating a profile')
     handler.add_argument('--binary',
                          help='path to the binary to run, e.g. Firefox')
+    handler.add_argument('-u', '--unlisted', action='store_true',
+                         help='use the unlisted review page')
     handler.add_argument('-v', '--version', action='append', default=[],
                          help='pull a specific version')
     handler.add_argument('addon',
@@ -266,7 +268,7 @@ def cmd_get(handler, amo, args):
         print("Warning: the specified output directory is not the current"
               " directory, please cd %s" % os.path.join(args.outdir, args.addon))
 
-    review = amo.get_review(args.addon)
+    review = amo.get_review(args.addon, args.unlisted)
     addonpath = os.path.join(args.outdir, review.addonid)
 
     if os.path.exists(addonpath):

@@ -31,7 +31,7 @@ class Review(object):
         "Approved": ("Approved",),
     }
 
-    def __init__(self, parent, id_or_url):
+    def __init__(self, parent, id_or_url, unlisted=False):
         if id_or_url.startswith(AMO_BASE) or id_or_url.startswith(AMO_EDITOR_BASE):
             addonid = id_or_url.split("/")[-1]
         else:
@@ -45,7 +45,10 @@ class Review(object):
         self.token = None
         self.actions = []
         self.versions = []
-        self.url = '%s/review/%s' % (AMO_EDITOR_BASE, addonid)
+        if unlisted:
+            self.url = '%s/review-unlisted/%s' % (AMO_EDITOR_BASE, addonid)
+        else:
+            self.url = '%s/review-listed/%s' % (AMO_EDITOR_BASE, addonid)
         self.page = 0
 
     def find_latest_version(self):
@@ -85,6 +88,11 @@ class Review(object):
                 raise Exception("Invalid response")
 
             raise Exception(message[1].strip())
+        elif req.status_code == 301:
+            if req.headers['location'].startswith(AMO_EDITOR_BASE):
+                req = self.session.get(req.headers['location'], stream=True, allow_redirects=False)
+            else:
+                raise req.raise_for_status()
 
         req.raw.decode_content = True
         doc = lxml.html.parse(req.raw).getroot()
