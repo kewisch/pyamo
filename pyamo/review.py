@@ -303,7 +303,7 @@ class AddonVersionFile(object):
             pass
 
         with ZipFile(self.savedpath, 'r') as zf:
-            zf.extractall(extractpath)
+            zf.extractall(extractpath.decode("utf-8"))
 
     def save(self, targetpath, chunksize=16384):
         xpifile = "addon%s.xpi" % (self._platformsuffix)
