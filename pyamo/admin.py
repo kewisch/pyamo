@@ -142,7 +142,7 @@ class AdminInfo(object):
 
         first_page_path = ".pagination > li.selected > a"
         first_page_node = doc.xpath(csspath(first_page_path))
-        is_first_page = first_page_node[0].text == "1" if len(first_page_node) else True
+        is_first_page = first_page_node[0].text == "1" if first_page_node else True
 
         if page > 1 and is_first_page:
             # We've gone over the last page, need to bail early
@@ -185,12 +185,12 @@ class AdminInfo(object):
 
     def formdata(self, changedonly=False):
         data = {
-          'form-TOTAL_FORMS': len(self.versions),
-          'form-INITIAL_FORMS': len(self.versions),
-          'form-MIN_NUM_FORMS': 0,
-          'form-MAX_NUM_FORMS': 1000,
-          'csrfmiddlewaretoken': self.token,
-          'status': self.status
+            'form-TOTAL_FORMS': len(self.versions),
+            'form-INITIAL_FORMS': len(self.versions),
+            'form-MIN_NUM_FORMS': 0,
+            'form-MAX_NUM_FORMS': 1000,
+            'csrfmiddlewaretoken': self.token,
+            'status': self.status
         }
         formid = 0
         for version in self.versions:
@@ -214,7 +214,7 @@ class AdminInfo(object):
                 version.status = status
                 versionset.remove(version.version)
 
-        if len(versionset):
+        if versionset:
             raise Exception('Unknown versions: ' + ", ".join(versionset))
 
 

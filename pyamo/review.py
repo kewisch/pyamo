@@ -32,6 +32,7 @@ class Review(object):
     }
 
     def __init__(self, parent, id_or_url, unlisted=False):
+        id_or_url = str(id_or_url)
         if id_or_url.startswith(AMO_BASE) or id_or_url.startswith(AMO_EDITOR_BASE):
             addonid = id_or_url.split("/")[-1]
         else:
