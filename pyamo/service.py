@@ -149,7 +149,7 @@ class AddonsService(object):
 
             uploadurl = '%s/addon/%s/upload-listed' % (AMO_DEVELOPER_BASE, addonid)
 
-            req = self.session.post(uploadurl, files=payload, allow_redirects=False)
+            req = self.session.post(uploadurl, files=payload, allow_redirects=False, timeout=None)
             if req.status_code != 302:
                 raise Exception('Could not upload %s' % xpi)
             uploadurl = req.headers['location']
@@ -162,7 +162,7 @@ class AddonsService(object):
 
         report = None
         while not report or not report.completed:
-            req = self.session.get(uploadurl)
+            req = self.session.get(uploadurl, timeout=None)
             report = ValidationReport(addonid, req.json(), platform)
 
             if not report.success:
