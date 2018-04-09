@@ -52,7 +52,7 @@ LOG_SORTKEYS = [
 REVIEW_LOGS = ['reviewlog']
 
 
-@subcmd('adminget')
+@subcmd('adminget', help="Show admin manage information about an add-on")
 @requiresvpn
 def cmd_admin(handler, amo, args):
     handler.add_argument('addon', help='the addon id or url to show info about')
@@ -80,7 +80,8 @@ def cmd_admin(handler, amo, args):
         print(json.dumps({"status": admininfo.status, "files": filedata}, indent=2))
 
 
-@subcmd('admindisable')
+@subcmd('admindisable',
+        help="Admin disable one or more add-ons, optionally with a rejection message")
 def cmd_admindisable(handler, amo, args):
     handler.add_argument('addon', nargs='*', help='the addon id to disable')
     handler.add_argument('-u', '--user', help='Disable all listed add-ons by this user')
@@ -97,7 +98,8 @@ def cmd_admindisable(handler, amo, args):
 
     addons = None
     if args.user:
-        addoninfo = amo.get_user_addons(args.user).filter(status=args.status, channel=args.channel)
+        addoninfo = amo.get_user_addons(args.user)
+        addoninfo.filter(status=args.status, channel=args.channel)
 
         print("Will disable the following add-ons:\n")
         print(addoninfo)
@@ -128,7 +130,8 @@ def cmd_admindisable(handler, amo, args):
     print("Done!")
 
 
-@subcmd('adminchange')
+@subcmd('adminchange',
+        help="Change the status of an add-ons and its files using the admin manage page")
 @requiresvpn
 def cmd_adminstatus(handler, amo, args):
     handler.add_argument('addon', help='the addon id or url to show info about')
@@ -239,7 +242,7 @@ def cmd_adminstatus(handler, amo, args):
     print("Done")
 
 
-@subcmd('info')
+@subcmd('info', help="Show basic information about an add-on")
 def cmd_info(handler, amo, args):
     handler.add_argument('addon', help='the addon id or url to show info about')
     args = handler.parse_args(args)
@@ -254,7 +257,7 @@ def cmd_info(handler, amo, args):
             print("\t\tSources: %s" % version.sources)
 
 
-@subcmd('list')
+@subcmd('list', help="List add-ons in the given queue")
 def cmd_list(handler, amo, args):
     handler.add_argument('-u', '--url', action='store_true',
                          help='output add-on urls only')
@@ -289,7 +292,7 @@ def cmd_list(handler, amo, args):
 
 
 # pylint: disable=too-many-branches,too-many-statements
-@subcmd('get')
+@subcmd('get', help="Download one or more versions of an add-on, including sources")
 def cmd_get(handler, amo, args):
     handler.add_argument('-o', '--outdir', default=os.getcwd(),
                          help='output directory for add-ons')
@@ -383,7 +386,7 @@ def cmd_get(handler, amo, args):
         runprofile(args.binary, versions[-1].files[-1])
 
 
-@subcmd('run')
+@subcmd('run', help="Run an add-on in Firefox (preferably in a VM)")
 def cmd_run(handler, amo, args):
     handler.add_argument('-o', '--outdir', default=os.getcwd(),
                          help='output directory for add-ons')
@@ -420,7 +423,7 @@ def cmd_run(handler, amo, args):
     runprofile(args.binary, fileobj)
 
 
-@subcmd('decide')
+@subcmd('decide', help="Make a review decision for an add-on, along with message")
 def cmd_decide(handler, amo, args):
     handler.add_argument('-m', '--message',
                          help='comment add to the review')
@@ -481,7 +484,7 @@ def cmd_decide(handler, amo, args):
     print("Done")
 
 
-@subcmd('logs')
+@subcmd('logs', help="Show the review logs")
 def cmd_logs(handler, amo, args):
     handler.add_argument('-l', '--limit', type=int, default=sys.maxint,
                          help='maximum number of entries to retrieve')
@@ -519,7 +522,7 @@ def cmd_logs(handler, amo, args):
     print(*logs, sep="\n")
 
 
-@subcmd('upload')
+@subcmd('upload', help="Upload an add-on to addons.mozilla.org")
 def cmd_upload(handler, amo, args):
     handler.add_argument('-v', '--verbose', action='store_true',
                          help='show validation messages')
@@ -610,7 +613,7 @@ def main():
         amo.session.timeout = args.timeout
         return amo
 
-    handler = ArgumentHandler()
+    handler = ArgumentHandler(use_subcommand_help=True)
     handler.add_argument('-c', '--cookies', default=cookiedefault,
                          help='the file to save the session cookies to')
     handler.add_argument('--timeout', type=int, default=None,
