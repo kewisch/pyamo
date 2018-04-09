@@ -122,18 +122,26 @@ def requiresvpn(fn):
     return wrapper
 
 
-def parse_args_with_defaults(handler, cmd, args):
-    config = ConfigParser()
-    if sys.platform.startswith("win"):
-        configfilepath = os.path.expanduser("~/amorc.ini")
-    else:
-        configfilepath = os.path.expanduser('~/.amorc')
-    config.read(configfilepath)
+class AmoConfigParser(ConfigParser):
+    def __init__(self, *args, **kwargs):
+        ConfigParser.__init__(self, *args, **kwargs)
 
+        if sys.platform.startswith("win"):
+            configfilepath = os.path.expanduser("~/amorc.ini")
+        else:
+            configfilepath = os.path.expanduser('~/.amorc')
+        self.read(configfilepath)
+
+
+# global config instance
+AMO_CONFIG = AmoConfigParser()
+
+
+def parse_args_with_defaults(handler, cmd, args):
     # Read the defaults from the config file, if it does not exist just parse
     # options as usual.
     try:
-        defaults = config.get('defaults', cmd).split(" ")
+        defaults = AMO_CONFIG.get('defaults', cmd).split(" ")
     except (NoOptionError, NoSectionError):
         return handler.parse_args(args)
 
