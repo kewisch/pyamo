@@ -15,7 +15,7 @@ from zipfile import ZipFile
 from urlparse import urlparse, urljoin
 from mozprofile import FirefoxProfile
 
-from .utils import AMO_BASE, AMO_EDITOR_BASE, csspath
+from .utils import AMO_BASE, AMO_EDITOR_BASE, AMO_REVIEWERS_API_BASE, csspath
 from .lzma import SevenZFile
 
 import lxml.html
@@ -45,6 +45,7 @@ class Review(object):
         self.token = None
         self.actions = []
         self.versions = []
+        self.unlisted = unlisted
         if unlisted:
             self.url = '%s/review-unlisted/%s' % (AMO_EDITOR_BASE, addonid)
         else:
@@ -99,6 +100,18 @@ class Review(object):
 
         self.addonname = doc.xpath(csspath('h2.addon span:first-of-type'))[0].text
         self.token = doc.xpath(csspath('form input[name="csrfmiddlewaretoken"]'))[0].attrib['value']
+        self.enabledversions = map(lambda x: x.attrib['value'],
+                                   doc.xpath(csspath('#id_versions > option')))
+        self.api_token = doc.xpath(csspath("#extra-review-actions"))[0].attrib['data-api-token']
+
+        slugnode = doc.xpath(csspath('#actions-addon > li:first-child > a'))[0]
+        self.slug = slugnode.attrib['href'].strip('/').rpartition('/')[-1]
+        self.addonid = doc.xpath(csspath('#addon'))[0].attrib['data-id']
+
+        if self.unlisted:
+            self.url = '%s/review-unlisted/%s' % (AMO_EDITOR_BASE, self.slug)
+        else:
+            self.url = '%s/review-listed/%s' % (AMO_EDITOR_BASE, self.slug)
 
         self.actions = [
             i.attrib['value'] for i in doc.xpath(csspath('[name="action"]'))
@@ -136,6 +149,36 @@ class Review(object):
             if not self.get_next_page():
                 return default
         return res
+
+    def get_enabled_version_numbers(self):
+        return self.enabledversions
+
+    def decide(self, action, comments, versions=[], versionids=[]):
+        if len(versions):
+            if action == 'reject_multiple_versions':
+                versionids = [v.id for v in versions if v.id]
+            else:
+                versionids = []
+
+        postdata = {
+            'csrfmiddlewaretoken': self.token,
+            'action': action,
+            'comments': comments,
+            'applications': '',  # TODO
+            'operating_systems': '',  # TODO
+            'info_request': 'sometime in the past',
+            'info_request_deadline': 7,
+            'versions': versionids
+        }
+
+        req = self.session.post(self.url, data=postdata)
+        return req.status_code == 200
+
+    def admin_disable(self):
+        url = AMO_REVIEWERS_API_BASE + '/addon/%s/disable/' % self.addonid
+        headers = {'Authorization': 'Bearer ' + self.api_token}
+        req = self.session.post(url, headers=headers, allow_redirects=False)
+        return req.status_code == 202
 
 
 class AddonReviewVersion(object):

@@ -15,13 +15,13 @@ from tzlocal import get_localzone
 from dateutil import parser as dateparser
 from requests.exceptions import HTTPError
 
-from .admin import AdminInfo
+from .admin import AdminInfo, AdminRedashInfo
 from .queue import QueueEntry
 from .logs import LogEntry
 from .review import Review
 from .session import AmoSession
 from .validation import ValidationReport
-from .utils import AMO_BASE, AMO_EDITOR_BASE, AMO_DEVELOPER_BASE, \
+from .utils import AMO_BASE, AMO_CONFIG, AMO_EDITOR_BASE, AMO_DEVELOPER_BASE, \
     AMO_TIMEZONE, VALIDATION_WAIT, UPLOAD_PLATFORM, csspath
 
 import lxml.html
@@ -46,6 +46,10 @@ class AddonsService(object):
         else:
             admininfo.get()
         return admininfo
+
+    def get_user_addons(self, user):
+        redash = AdminRedashInfo(AMO_CONFIG.get('auth', 'redash_key'))
+        return redash.get_user_addons(user)
 
     def _unpaginate(self, url, func, params=None, limit=sys.maxint):
         things = []

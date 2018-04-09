@@ -6,13 +6,87 @@
 from __future__ import print_function
 
 import sys
+import requests
+import time
 
-from .utils import AMO_BASE, AMO_ADMIN_BASE, AMO_EDITOR_BASE, REV_ADDON_STATE, \
-                   REV_ADDON_FILE_STATE, csspath
+from .utils import AMO_BASE, AMO_ADMIN_BASE, AMO_EDITOR_BASE, AMO_REVIEWERS_API_BASE, \
+                   REV_ADDON_STATE, REV_ADDON_FILE_STATE, csspath
 import lxml.html
 
 
+class AdminUserInfoAddons(object):
+
+    def __init__(self, data):
+        #  {u'addon_id': 922960,
+        #   u'channel::multi-filter': u'listed',
+        #   u'guid': u'send-to-things@mozilla.kewis.ch',
+        #   u'name': u'Send To Things',
+        #   u'slugid': u'send-to-things',
+        #   u'status::multi-filter': u'approved'},
+        self.data = data
+
+    def get_ids(self):
+        return [elem['addon_id'] for elem in self.data]
+
+    def filter(self, status=None, channel=None):
+        def filterelem(elem):
+            return (not status or elem['status::multi-filter'] == status) \
+               and (not channel or elem['channel::multi-filter'] == channel)
+
+        self.data = filter(filterelem, self.data)
+        return self
+
+    def __str__(self):
+        return "\n".join(["[{slugid: <32}] {name}".format(**elem) for elem in self.data])
+
+
+class AdminRedashInfo(object):
+    # pylint: disable=too-few-public-methods
+
+    USER_QUERY_ID = 49910  # the query for all addons for a user
+
+    def __init__(self, api_key, timeout=2):
+        self.session = requests.Session()
+        self.session.headers.update({'Authorization': 'Key {}'.format(api_key)})
+
+        self.redash_url = 'https://sql.telemetry.mozilla.org'
+        self.timeout = timeout
+
+    def _poll_job(self, job):
+        while job['status'] not in (3, 4):
+            response = self.session.get('{}/api/jobs/{}'.format(self.redash_url, job['id']))
+            job = response.json()['job']
+            if job['status'] == 3:
+                return job['query_result_id']
+            time.sleep(self.timeout)
+        return None
+
+    def _get_query_results(self, query_id, params):
+        url = '{}/api/queries/{}/refresh'.format(self.redash_url, query_id)
+        response = self.session.post(url, params=params)
+
+        if response.status_code != 200:
+            raise Exception('Refresh failed.')
+
+        result_id = self._poll_job(response.json()['job'])
+
+        if result_id:
+            url = '{}/api/queries/{}/results/{}.json'.format(self.redash_url, query_id, result_id)
+            response = self.session.get(url)
+            if response.status_code != 200:
+                raise Exception('Failed getting results.')
+        else:
+            raise Exception('Query execution failed.')
+
+        return response.json()['query_result']['data']['rows']
+
+    def get_user_addons(self, user):
+        data = self._get_query_results(AdminRedashInfo.USER_QUERY_ID, {"p_user": user})
+        return AdminUserInfoAddons(data[1:])
+
+
 class AdminInfo(object):
+    # pylint: disable=too-many-instance-attributes
 
     def __init__(self, parent, id_or_url):
         if id_or_url.startswith(AMO_BASE) or id_or_url.startswith(AMO_EDITOR_BASE):
@@ -30,6 +104,12 @@ class AdminInfo(object):
         self.status = None
 
         self.url = '%s/addon/manage/%s/' % (AMO_ADMIN_BASE, addonid)
+
+    @staticmethod
+    def disable(parent, addon_id):
+        url = AMO_REVIEWERS_API_BASE + '/addon/%s/disable/' % addon_id
+        req = parent.session.post(url, allow_redirects=False)
+        return req.status_code == 202
 
     def get(self):
         self.versions = []

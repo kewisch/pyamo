@@ -79,6 +79,54 @@ def cmd_admin(handler, amo, args):
         print(json.dumps({"status": admininfo.status, "files": filedata}, indent=2))
 
 
+@subcmd('admindisable')
+def cmd_admindisable(handler, amo, args):
+    handler.add_argument('addon', nargs='*', help='the addon id to disable')
+    handler.add_argument('-u', '--user', help='Disable all listed add-ons by this user')
+    handler.add_argument('-c', '--channel', default='listed',
+                         help='Disable only add-ons with this channel (defaults to listed)')
+    handler.add_argument('-s', '--status', default=None,
+                         help='Disable only add-ons with this status')
+    handler.add_argument('-m', '--message', default=None, help='Also send a rejection message')
+    args = handler.parse_args(args)
+
+    if args.addon and args.user:
+        print("Error: can't specify both addons and user argument")
+        return
+
+    addons = None
+    if args.user:
+        addoninfo = amo.get_user_addons(args.user).filter(status=args.status, channel=args.channel)
+
+        print("Will disable the following add-ons:\n")
+        print(addoninfo)
+        print("\nReady to go? (Ctrl+C to cancel)")
+        raw_input()
+
+        addons = addoninfo.get_ids()
+    else:
+        print("Will disable %d add-ons, ready to go? (Ctrl+C to cancel)" % len(args.addon))
+        raw_input()
+        addons = args.addon
+
+    sys.stdout.write("Disabling...")
+    sys.stdout.flush()
+    for addon in addons:
+        review = amo.get_review(addon)
+        success = True
+        if args.message:
+            versionids = review.get_enabled_version_numbers()
+            success = review.decide("reject_multiple_versions", args.message, versionids=versionids)
+
+        if success and review.admin_disable():
+            sys.stdout.write(".")
+        else:
+            sys.stdout.write("E(%s)" % addon)
+        sys.stdout.flush()
+
+    print("Done!")
+
+
 @subcmd('adminchange')
 @requiresvpn
 def cmd_adminstatus(handler, amo, args):
@@ -200,7 +248,7 @@ def cmd_info(handler, amo, args):
     for version in review.versions:
         print("\tVersion %s @ %s" % (version.version, version.date))
         for fileobj in version.files:
-            print("\t\tFile #%s (%s): %s" % (fileobj.addonid, fileobj.status, fileobj.url))
+            print("\t\tFile #%s (%s): %s" % (fileobj.slug, fileobj.status, fileobj.url))
         if version.sources:
             print("\t\tSources: %s" % version.sources)
 
@@ -269,7 +317,7 @@ def cmd_get(handler, amo, args):
               " directory, please cd %s" % os.path.join(args.outdir, args.addon))
 
     review = amo.get_review(args.addon, args.unlisted)
-    addonpath = os.path.join(args.outdir, review.addonid)
+    addonpath = os.path.join(args.outdir, review.slug)
 
     if os.path.exists(addonpath):
         print("Warning: add-on directory already exists and may contain stale files")
@@ -308,7 +356,7 @@ def cmd_get(handler, amo, args):
 
     for version in versions:
         platforms = ", ".join(version.apps)
-        print('Getting version %s %s [%s]' % (review.addonid, version.version, platforms))
+        print('Getting version %s %s [%s]' % (review.slug, version.version, platforms))
         for fileobj in version.files:
             fileplatforms = ", ".join(fileobj.platforms)
             print('\tGetting file %s [%s]' % (fileobj.filename, fileplatforms))
@@ -326,7 +374,7 @@ def cmd_get(handler, amo, args):
             version.extractsources(addonpath)
 
     if args.run:
-        print('Running applicaton for %s %s' % (review.addonid, versions[-1].version))
+        print('Running applicaton for %s %s' % (review.slug, versions[-1].version))
         if not args.binary:
             print("Warning: you should be running unreviewed extensions in a VM for safety")
             args.binary = find_binary("firefox")
@@ -359,7 +407,7 @@ def cmd_run(handler, amo, args):
 
     version = next((v for v in review.versions if v.version in argversions))
 
-    addonpath = os.path.join(args.outdir, review.addonid)
+    addonpath = os.path.join(args.outdir, review.slug)
 
     version.savedpath = os.path.join(addonpath, version.version, "addon.xpi")
     fileobj = version.files[0]
