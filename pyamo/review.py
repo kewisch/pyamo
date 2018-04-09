@@ -126,6 +126,11 @@ class Review(object):
             # We've gone over the last page, need to bail early
             return False
 
+        self.versionmap = {}
+        options = doc.xpath(csspath('#id_versions option'))
+        for option in options:
+            self.versionmap[option.text] = option.attrib['value']
+
         heads = doc.xpath(csspath('#review-files > .listing-header'))
         versions = []
         for head in heads:
@@ -189,6 +194,7 @@ class AddonReviewVersion(object):
         self.parent = parent
         self.session = parent.session
 
+        self.id = None
         self.sources = None
         self.sourcepath = None
         self.sourcefilename = None
@@ -203,6 +209,10 @@ class AddonReviewVersion(object):
         args = head.iterchildren().next().text.encode('utf-8').strip().split(" ")
         _, self.version, _, month, day, year = filter(None, args)  # pylint: disable=bad-builtin
         self.date = '%s %s %s' % (month, day, year)
+
+        self.id = None
+        if self.version in self.parent.versionmap:
+            self.id = self.parent.versionmap[self.version]
 
     def _init_body(self, body):
         fileinfo = body.xpath(csspath('.file-info'))
@@ -272,21 +282,6 @@ class AddonReviewVersion(object):
             os.rmdir(extractpath)
             traceback.print_exc()
             print("Could not extract sources due to above exception, skipping extraction")
-
-    def decide(self, action='prelim', comments=''):
-        postdata = {
-            'csrfmiddlewaretoken': self.parent.token,
-            'action': action,
-            'comments': comments,
-            'canned_response': '',
-            'addon_files': [f.addonid for f in self.files],
-            'operating_systems': '',  # TODO
-            'applications': ''  # TODO
-        }
-
-        url = '%s/review/%s' % (AMO_EDITOR_BASE, self.parent.addonid)
-        req = self.session.post(url, data=postdata, allow_redirects=False)
-        return req.status_code == 302
 
 
 class AddonVersionFile(object):

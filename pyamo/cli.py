@@ -26,10 +26,11 @@ from .utils import find_binary, runprofile, parse_args_with_defaults, \
                    REV_ADDON_STATE, REV_ADDON_FILE_STATE
 
 DEFAULT_MESSAGE = {
+    'confirm_auto_approved': '',
     'public': 'Your add-on submission has been approved.',
-    'prelim': 'Your add-on submission has been approved.',
     'reject': 'Your version was rejected because of the following problems:',
-    'info': 'Please provide us with detailed information on how to test your add-on.',
+    'reject_multiple_versions': 'Your versions were rejected because of the following problems:',
+    'reply': 'Please provide us with detailed information on how to test your add-on.',
     'super': 'halp!',
     'comment': 'FYI: bananas!'
 }
@@ -423,6 +424,8 @@ def cmd_run(handler, amo, args):
 def cmd_decide(handler, amo, args):
     handler.add_argument('-m', '--message',
                          help='comment add to the review')
+    handler.add_argument('-A', '--all', action='store_true',
+                         help='apply to all versions, e.g. rejections')
     handler.add_argument('-a', '--action', required=True, choices=DEFAULT_MESSAGE.keys(),
                          help='the action to execute')
     handler.add_argument('-f', '--force', action='store_true',
@@ -472,12 +475,8 @@ def cmd_decide(handler, amo, args):
             print("Error: Action not valid for reviewing %s (%s)" % (review.addonname, actions))
             continue
 
-        version = review.versions[-1]
-
-        print("Giving %s review to %d files in %s %s" % (
-            args.action, len(version.files), review.addonname, version.version
-        ))
-        version.decide(args.action, args.message)
+        versions = review.versions if args.all else [review.versions[-1]]
+        review.decide(args.action, args.message, versions)
 
     print("Done")
 
