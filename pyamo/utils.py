@@ -133,6 +133,21 @@ class AmoConfigParser(ConfigParser):
             configfilepath = os.path.expanduser('~/.amorc')
         self.read(configfilepath)
 
+    def get(self, *args, **kwargs):
+        hasfallback = False
+        if "fallback" in kwargs:
+            fallback = kwargs['fallback']
+            hasfallback = True
+            del kwargs['fallback']
+
+        try:
+            return ConfigParser.get(self, *args, **kwargs)
+        except (NoOptionError, NoSectionError):
+            if hasfallback:
+                return fallback
+            else:
+                raise
+
 
 # global config instance
 AMO_CONFIG = AmoConfigParser()

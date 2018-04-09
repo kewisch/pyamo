@@ -48,7 +48,11 @@ class AddonsService(object):
         return admininfo
 
     def get_user_addons(self, user):
-        redash = AdminRedashInfo(AMO_CONFIG.get('auth', 'redash_key'))
+        api_key = AMO_CONFIG.get('auth', 'redash_key', fallback=None)
+        if not api_key:
+            raise Exception("A redash API key is required in the config (auth.redash_key)")
+
+        redash = AdminRedashInfo(api_key)
         return redash.get_user_addons(user)
 
     def _unpaginate(self, url, func, params=None, limit=sys.maxint):
