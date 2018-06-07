@@ -4,9 +4,10 @@
 # Portions Copyright (C) Philipp Kewisch, 2015
 
 import sys
-import urllib
+import six
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 
-from urlparse import urljoin
+from six.moves.urllib.parse import urljoin
 from dateutil import parser as dateparser
 from tzlocal import get_localzone
 
@@ -24,7 +25,7 @@ class LogEntry(object):
 
         self.date = AMO_TIMEZONE.localize(dateparser.parse(dtcell.text))
         self.addonname = nameelem.text.strip()
-        self.addonid = urllib.unquote(actionelem.attrib['href'].split('/')[-1]).decode('utf8')
+        self.addonid = six.moves.urllib.parse.unquote(actionelem.attrib['href'].split('/')[-1]).decode('utf8')
         self.url = urljoin(AMO_EDITOR_BASE, actionelem.attrib['href'])
         self.version = nameelem.tail.strip()
         self.reviewer = editorcell.text.strip()
