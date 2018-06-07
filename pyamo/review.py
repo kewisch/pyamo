@@ -19,7 +19,16 @@ from .utils import AMO_BASE, AMO_EDITOR_BASE, AMO_REVIEWERS_API_BASE, csspath
 from .lzma import SevenZFile
 
 import lxml.html
-import magic
+
+def getArchiveCtor(path):
+    with open(path, "rb") as f:
+        b=f.read(2)
+        if b == b"PK":
+            return ZipFile
+        elif b == b"7z":
+            b=f.read(4)
+            if b==b"\xBC\xAF\x27\x1C":
+                return SevenZFile
 
 
 class Review(object):
@@ -265,15 +274,14 @@ class AddonReviewVersion(object):
             os.makedirs(extractpath)
         except OSError:
             pass
-
-        mime = magic.from_file(self.sourcepath, mime=True)
-
+        ctor = None
         try:
-            if mime == "application/x-7z-compressed":
-                with SevenZFile(self.sourcepath, 'r') as zf:
-                    zf.extractall(extractpath)
-            elif mime == "application/zip":
-                with ZipFile(self.sourcepath, 'r') as zf:
+            ctor=getArchiveCtor(self.sourcepath)
+        except:
+            pass
+        try:
+            if ctor:
+                with ctor(self.sourcepath, 'r') as zf:
                     zf.extractall(extractpath)
             else:
                 print("Don't know how to handle %s, skipping extraction" % mime)
