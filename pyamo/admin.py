@@ -4,7 +4,6 @@
 # Portions Copyright (C) Philipp Kewisch, 2017
 
 from __future__ import print_function
-
 import sys
 import requests
 import time
@@ -33,7 +32,7 @@ class AdminUserInfoAddons(object):
             return (not status or elem['status::multi-filter'] == status) \
                and (not channel or elem['channel::multi-filter'] == channel)
 
-        self.data = filter(filterelem, self.data)
+        self.data = list(filter(filterelem, self.data))
         return self
 
     def __str__(self):

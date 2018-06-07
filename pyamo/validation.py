@@ -5,8 +5,9 @@
 
 from __future__ import print_function
 
-from urlparse import urljoin
-from HTMLParser import HTMLParser
+
+from six.moves.urllib.parse import urljoin
+from six.moves.html_parser import HTMLParser
 from textwrap import TextWrapper
 from collections import defaultdict
 

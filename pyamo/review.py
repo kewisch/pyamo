@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 # Portions Copyright (C) Philipp Kewisch, 2015-2016
 
-from __future__ import print_function
+
 
 import os
 import re
@@ -12,7 +12,7 @@ import shutil
 import traceback
 
 from zipfile import ZipFile
-from urlparse import urlparse, urljoin
+from six.moves.urllib.parse import urlparse, urljoin
 from mozprofile import FirefoxProfile
 
 from .utils import AMO_BASE, AMO_EDITOR_BASE, AMO_REVIEWERS_API_BASE, csspath
@@ -101,8 +101,7 @@ class Review(object):
 
         self.addonname = doc.xpath(csspath('h2.addon span:first-of-type'))[0].text
         self.token = doc.xpath(csspath('form input[name="csrfmiddlewaretoken"]'))[0].attrib['value']
-        self.enabledversions = map(lambda x: x.attrib['value'],
-                                   doc.xpath(csspath('#id_versions > option')))
+        self.enabledversions = [x.attrib['value'] for x in doc.xpath(csspath('#id_versions > option'))]
         self.api_token = doc.xpath(csspath("#extra-review-actions"))[0].attrib['data-api-token']
 
         slugnode = doc.xpath(csspath('#actions-addon > li:first-child > a'))[0]
@@ -207,7 +206,7 @@ class AddonReviewVersion(object):
 
     def _init_head(self, head):
         args = head.iterchildren().next().text.encode('utf-8').strip().split(" ")
-        _, self.version, _, month, day, year = filter(None, args)  # pylint: disable=bad-builtin
+        _, self.version, _, month, day, year = [_f for _f in args if _f]  # pylint: disable=bad-builtin
         self.date = '%s %s %s' % (month, day, year)
 
         self.id = None

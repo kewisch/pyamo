@@ -7,6 +7,7 @@
 
 from __future__ import print_function
 
+import sys
 import os
 import shutil
 import sys
@@ -17,7 +18,9 @@ import getpass
 import logging
 import subprocess
 import tempfile
-import httplib
+import six
+import six.moves.http_client as httplib
+
 
 from arghandler import subcmd, ArgumentHandler
 from .service import AddonsService
@@ -42,7 +45,7 @@ QUEUES = {
     'updates': 'queue/updates'
 }
 ALL_QUEUES = QUEUES.copy()
-ALL_QUEUES.update({v: v for v in QUEUES.values()})
+ALL_QUEUES.update({v: v for v in list(QUEUES.values())})
 DEFAULT_QUEUE = 'new'
 
 LOG_SORTKEYS = [
@@ -104,12 +107,12 @@ def cmd_admindisable(handler, amo, args):
         print("Will disable the following add-ons:\n")
         print(addoninfo)
         print("\nReady to go? (Ctrl+C to cancel)")
-        raw_input()
+        six.moves.input()
 
         addons = addoninfo.get_ids()
     else:
         print("Will disable %d add-ons, ready to go? (Ctrl+C to cancel)" % len(args.addon))
-        raw_input()
+        six.moves.input()
         addons = args.addon
 
     sys.stdout.write("Disabling...")
@@ -236,7 +239,7 @@ def cmd_adminstatus(handler, amo, args):
 
     if args.file:
         print("Last chance to bail out before changes are made (Ctrl+C to quit, enter to continue)")
-        raw_input()
+        six.moves.input()
 
     admininfo.save()
     print("Done")
@@ -266,7 +269,7 @@ def cmd_list(handler, amo, args):
     handler.add_argument('-i', '--ids', action='store_true',
                          help='output add-on ids only')
     handler.add_argument('queue', nargs='?',
-                         choices=ALL_QUEUES.keys(),
+                         choices=list(ALL_QUEUES.keys()),
                          metavar="{" + ",".join(sorted(QUEUES.keys())) + "}",
                          default=DEFAULT_QUEUE,
                          help='the queue to list')
@@ -429,7 +432,7 @@ def cmd_decide(handler, amo, args):
                          help='comment add to the review')
     handler.add_argument('-A', '--all', action='store_true',
                          help='apply to all versions, e.g. rejections')
-    handler.add_argument('-a', '--action', required=True, choices=DEFAULT_MESSAGE.keys(),
+    handler.add_argument('-a', '--action', required=True, choices=list(DEFAULT_MESSAGE.keys()),
                          help='the action to execute')
     handler.add_argument('-f', '--force', action='store_true',
                          help='Do not wait 3 seconds before executing the action')
@@ -486,7 +489,7 @@ def cmd_decide(handler, amo, args):
 
 @subcmd('logs', help="Show the review logs")
 def cmd_logs(handler, amo, args):
-    handler.add_argument('-l', '--limit', type=int, default=sys.maxint,
+    handler.add_argument('-l', '--limit', type=int, default=six.MAXSIZE,
                          help='maximum number of entries to retrieve')
     handler.add_argument('-s', '--start',
                          help='start time range (in local timezone')
@@ -596,10 +599,10 @@ def init_logging(level, _):
 
 def login_prompter_impl(unblock_code=False):
     if unblock_code:
-        code = raw_input("Unblock Code: ").strip()
+        code = six.moves.input("Unblock Code: ").strip()
         return code
     else:
-        username = raw_input("Username: ").strip()
+        username = six.moves.input("Username: ").strip()
         password = getpass.getpass("Password: ").strip()
         return username, password
 
