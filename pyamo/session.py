@@ -12,10 +12,10 @@ import pickle
 import lxml.html
 import requests
 
-from .utils import AMO_BASE, AMO_API_BASE, AMO_ADMIN_BASE, FXASession
+from .utils import AMO_BASE, AMO_API_BASE, AMO_ADMIN_BASE, FXASession, H2RequestsSession
 
 
-class AmoSession(requests.Session):
+class AmoSession(H2RequestsSession):
     def __init__(self, service, login_prompter, cookiefile=None, *args, **kwargs):
         self.service = service
         self.login_prompter = login_prompter
@@ -36,7 +36,7 @@ class AmoSession(requests.Session):
 
     def persist(self):
         if self.cookiefile:
-            with os.fdopen(os.open(self.cookiefile, os.O_WRONLY | os.O_CREAT, 0600), 'w') as fdr:
+            with os.fdopen(os.open(self.cookiefile, os.O_WRONLY | os.O_CREAT, 0o600), 'w') as fdr:
                 pickle.dump(requests.utils.dict_from_cookiejar(self.cookies), fdr)
 
     def request(self, method, url, *args, **kwargs):

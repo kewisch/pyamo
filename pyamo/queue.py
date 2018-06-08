@@ -5,7 +5,7 @@
 
 import sys
 
-from urlparse import urljoin
+from six.moves.urllib.parse import urljoin
 
 from .utils import AMO_EDITOR_BASE
 
