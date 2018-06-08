@@ -12,10 +12,10 @@ import pickle
 import lxml.html
 import requests
 
-from .utils import AMO_BASE, AMO_API_BASE, AMO_ADMIN_BASE, FXASession
+from .utils import AMO_BASE, AMO_API_BASE, AMO_ADMIN_BASE, FXASession, H2RequestsSession
 
 
-class AmoSession(requests.Session):
+class AmoSession(H2RequestsSession):
     def __init__(self, service, login_prompter, cookiefile=None, *args, **kwargs):
         self.service = service
         self.login_prompter = login_prompter

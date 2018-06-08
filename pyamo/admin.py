@@ -9,7 +9,7 @@ import requests
 import time
 
 from .utils import AMO_BASE, AMO_ADMIN_BASE, AMO_EDITOR_BASE, AMO_REVIEWERS_API_BASE, \
-                   REV_ADDON_STATE, REV_ADDON_FILE_STATE, csspath
+                   REV_ADDON_STATE, REV_ADDON_FILE_STATE, csspath, H2RequestsSession
 import lxml.html
 
 
@@ -45,7 +45,7 @@ class AdminRedashInfo(object):
     USER_QUERY_ID = 49910  # the query for all addons for a user
 
     def __init__(self, api_key, timeout=2):
-        self.session = requests.Session()
+        self.session = H2RequestsSession()
         self.session.headers.update({'Authorization': 'Key {}'.format(api_key)})
 
         self.redash_url = 'https://sql.telemetry.mozilla.org'
