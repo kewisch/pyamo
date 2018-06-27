@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 # Portions Copyright (C) Philipp Kewisch, 2015-2016
 
-from __future__ import print_function
+
 
 import os
 import re
@@ -12,14 +12,23 @@ import shutil
 import traceback
 
 from zipfile import ZipFile
-from urlparse import urlparse, urljoin
+from six.moves.urllib.parse import urlparse, urljoin
 from mozprofile import FirefoxProfile
 
 from .utils import AMO_BASE, AMO_EDITOR_BASE, AMO_REVIEWERS_API_BASE, csspath
 from .lzma import SevenZFile
 
 import lxml.html
-import magic
+
+def getArchiveCtor(path):
+    with open(path, "rb") as f:
+        b=f.read(2)
+        if b == b"PK":
+            return ZipFile
+        elif b == b"7z":
+            b=f.read(4)
+            if b==b"\xBC\xAF\x27\x1C":
+                return SevenZFile
 
 
 class Review(object):
@@ -101,8 +110,7 @@ class Review(object):
 
         self.addonname = doc.xpath(csspath('h2.addon span:first-of-type'))[0].text
         self.token = doc.xpath(csspath('form input[name="csrfmiddlewaretoken"]'))[0].attrib['value']
-        self.enabledversions = map(lambda x: x.attrib['value'],
-                                   doc.xpath(csspath('#id_versions > option')))
+        self.enabledversions = [x.attrib['value'] for x in doc.xpath(csspath('#id_versions > option'))]
         self.api_token = doc.xpath(csspath("#extra-review-actions"))[0].attrib['data-api-token']
 
         slugnode = doc.xpath(csspath('#actions-addon > li:first-child > a'))[0]
@@ -207,7 +215,7 @@ class AddonReviewVersion(object):
 
     def _init_head(self, head):
         args = head.iterchildren().next().text.encode('utf-8').strip().split(" ")
-        _, self.version, _, month, day, year = filter(None, args)  # pylint: disable=bad-builtin
+        _, self.version, _, month, day, year = [_f for _f in args if _f]  # pylint: disable=bad-builtin
         self.date = '%s %s %s' % (month, day, year)
 
         self.id = None
@@ -266,15 +274,14 @@ class AddonReviewVersion(object):
             os.makedirs(extractpath)
         except OSError:
             pass
-
-        mime = magic.from_file(self.sourcepath, mime=True)
-
+        ctor = None
         try:
-            if mime == "application/x-7z-compressed":
-                with SevenZFile(self.sourcepath, 'r') as zf:
-                    zf.extractall(extractpath)
-            elif mime == "application/zip":
-                with ZipFile(self.sourcepath, 'r') as zf:
+            ctor=getArchiveCtor(self.sourcepath)
+        except:
+            pass
+        try:
+            if ctor:
+                with ctor(self.sourcepath, 'r') as zf:
                     zf.extractall(extractpath)
             else:
                 print("Don't know how to handle %s, skipping extraction" % mime)

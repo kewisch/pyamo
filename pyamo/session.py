@@ -36,7 +36,7 @@ class AmoSession(requests.Session):
 
     def persist(self):
         if self.cookiefile:
-            with os.fdopen(os.open(self.cookiefile, os.O_WRONLY | os.O_CREAT, 0600), 'w') as fdr:
+            with os.fdopen(os.open(self.cookiefile, os.O_WRONLY | os.O_CREAT, 0o600), 'w') as fdr:
                 pickle.dump(requests.utils.dict_from_cookiejar(self.cookies), fdr)
 
     def request(self, method, url, *args, **kwargs):

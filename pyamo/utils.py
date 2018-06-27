@@ -10,7 +10,7 @@ import re
 import sys
 import requests
 
-from ConfigParser import ConfigParser, NoOptionError, NoSectionError
+from six.moves.configparser import ConfigParser, NoOptionError, NoSectionError
 from pytz import timezone
 from mozrunner import FirefoxRunner
 
@@ -57,7 +57,7 @@ ADDON_STATE = {
   "disabled": 5,
   "deleted": 11
 }
-REV_ADDON_STATE = {v: k for k, v in ADDON_STATE.items()}
+REV_ADDON_STATE = {v: k for k, v in list(ADDON_STATE.items())}
 
 ADDON_FILE_STATE = {
   "waiting": 1,
@@ -65,7 +65,7 @@ ADDON_FILE_STATE = {
   "disabled": 5,
   "beta": 7
 }
-REV_ADDON_FILE_STATE = {v: k for k, v in ADDON_FILE_STATE.items()}
+REV_ADDON_FILE_STATE = {v: k for k, v in list(ADDON_FILE_STATE.items())}
 
 
 def csspath(query):
@@ -95,7 +95,7 @@ class FXASession(object):
 
         try:
             self.session = self.client.login(username, password)
-        except fxa.errors.ClientError, e:
+        except fxa.errors.ClientError as e:
             if e.error == "Request blocked":
                 self.client.send_unblock_code(username)
                 code = self.login_prompter(unblock_code=True)
@@ -207,33 +207,33 @@ def find_binary(name):
 
         # find the default executable from the windows registry
         try:
-            import _winreg
+            from six.moves import winreg
         except ImportError:
             pass
         else:
             sam_flags = [0]
             # KEY_WOW64_32KEY etc only appeared in 2.6+, but that's OK as
             # only 2.6+ has functioning 64bit builds.
-            if hasattr(_winreg, "KEY_WOW64_32KEY"):
+            if hasattr(winreg, "KEY_WOW64_32KEY"):
                 if "64 bit" in sys.version:
                     # a 64bit Python should also look in the 32bit registry
-                    sam_flags.append(_winreg.KEY_WOW64_32KEY)
+                    sam_flags.append(winreg.KEY_WOW64_32KEY)
                 else:
                     # possibly a 32bit Python on 64bit Windows, so look in
                     # the 64bit registry incase there is a 64bit app.
-                    sam_flags.append(_winreg.KEY_WOW64_64KEY)
+                    sam_flags.append(winreg.KEY_WOW64_64KEY)
             for sam_flag in sam_flags:
                 try:
                     # assumes self.app_name is defined, as it should be for
                     # implementors
                     keyname = r"Software\Mozilla\Mozilla %s" % app_name
-                    sam = _winreg.KEY_READ | sam_flag
-                    app_key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, keyname, 0, sam)
-                    version, _ = _winreg.QueryValueEx(app_key, "CurrentVersion")
-                    version_key = _winreg.OpenKey(app_key, version + r"\Main")
-                    path, _ = _winreg.QueryValueEx(version_key, "PathToExe")
+                    sam = winreg.KEY_READ | sam_flag
+                    app_key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, keyname, 0, sam)
+                    version, _ = winreg.QueryValueEx(app_key, "CurrentVersion")
+                    version_key = winreg.OpenKey(app_key, version + r"\Main")
+                    path, _ = winreg.QueryValueEx(version_key, "PathToExe")
                     return path
-                except _winreg.error:
+                except winreg.error:
                     pass
 
         # search for the binary in the path
