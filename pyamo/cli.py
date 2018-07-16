@@ -84,9 +84,9 @@ def cmd_admin(handler, amo, args):
         help="Admin disable one or more add-ons, optionally with a rejection message")
 def cmd_admindisable(handler, amo, args):
     handler.add_argument('addon', nargs='*', help='the addon id to disable')
-    handler.add_argument('-u', '--user', help='Disable all listed add-ons by this user')
-    handler.add_argument('-c', '--channel', default='listed',
-                         help='Disable only add-ons with this channel (defaults to listed)')
+    handler.add_argument('-u', '--user', help='Disable all found add-ons by this user')
+    handler.add_argument('-c', '--channel', default=None,
+                         help='Disable only add-ons with this channel')
     handler.add_argument('-s', '--status', default=None,
                          help='Disable only add-ons with this status')
     handler.add_argument('-m', '--message', default=None, help='Also send a rejection message')
