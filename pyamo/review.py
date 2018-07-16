@@ -103,10 +103,11 @@ class Review(object):
         self.token = doc.xpath(csspath('form input[name="csrfmiddlewaretoken"]'))[0].attrib['value']
         self.enabledversions = map(lambda x: x.attrib['value'],
                                    doc.xpath(csspath('#id_versions > option')))
-        self.api_token = doc.xpath(csspath("#extra-review-actions"))[0].attrib['data-api-token']
+        tokennodes = doc.xpath(csspath("#extra-review-actions"))
+        self.api_token = tokennodes[0].attrib['data-api-token'] if tokennodes else None
 
-        slugnode = doc.xpath(csspath('#actions-addon > li:first-child > a'))[0]
-        self.slug = slugnode.attrib['href'].strip('/').rpartition('/')[-1]
+        slugnodes = doc.xpath('//*[@id="actions-addon"]/li/a')
+        self.slug = slugnodes[0].attrib['href'].strip('/').rpartition('/')[-1]
         self.addonid = doc.xpath(csspath('#addon'))[0].attrib['data-id']
 
         if self.unlisted:
