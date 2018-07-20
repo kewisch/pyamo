@@ -98,10 +98,14 @@ class FXASession(object):
         except fxa.errors.ClientError, e:
             if e.error == "Request blocked":
                 self.client.send_unblock_code(username)
-                code = self.login_prompter(unblock_code=True)
+                code = self.login_prompter(mode="unblock")
                 self.session = self.client.login(username, password, unblock_code=code)
             else:
                 raise e
+
+        if not self.session.verified and self.session.verificationMethod == "totp-2fa":
+            code = self.login_prompter(mode="2fa")
+            self.session.verify_totp(code)
 
         return self
 

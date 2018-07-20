@@ -594,14 +594,17 @@ def init_logging(level, _):
         httplib.HTTPConnection.debuglevel = 1
 
 
-def login_prompter_impl(unblock_code=False):
-    if unblock_code:
-        code = raw_input("Unblock Code: ").strip()
-        return code
-    else:
+def login_prompter_impl(mode="login"):
+    if mode == "2fa":
+        return raw_input("2FA Code: ").strip()
+    elif mode == "unblock":
+        return raw_input("Unblock Code: ").strip()
+    elif mode == "login":
         username = raw_input("Username: ").strip()
         password = getpass.getpass("Password: ").strip()
         return username, password
+    else:
+        raise Exception("Invalid prompter mode " + mode)
 
 
 def main():
