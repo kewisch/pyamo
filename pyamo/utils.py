@@ -105,7 +105,7 @@ class FXASession(object):
 
         if not self.session.verified and self.session.verificationMethod == "totp-2fa":
             code = self.login_prompter(mode="2fa")
-            self.session.verify_totp(code)
+            self.session.totp_verify(code)
 
         return self
 
