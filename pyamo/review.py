@@ -107,7 +107,11 @@ class Review(object):
         self.api_token = tokennodes[0].attrib['data-api-token'] if tokennodes else None
 
         slugnodes = doc.xpath('//*[@id="actions-addon"]/li/a')
-        self.slug = slugnodes[0].attrib['href'].strip('/').rpartition('/')[-1]
+        slugmatch = re.search(r'/addon/([^/]+)/', slugnodes[0].attrib['href'])
+        if not slugmatch:
+            raise Exception("Warning: could not determine slug for " + self.addonid);
+
+        self.slug = slugmatch.group(1).strip('/').rpartition('/')[-1]
         self.addonid = doc.xpath(csspath('#addon'))[0].attrib['data-id']
 
         if self.unlisted:
