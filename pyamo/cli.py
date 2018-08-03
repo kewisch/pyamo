@@ -321,7 +321,10 @@ def cmd_get(handler, amo, args):
               " directory, please cd %s" % os.path.join(args.outdir, args.addon))
 
     review = amo.get_review(args.addon, args.unlisted)
-    addonpath = os.path.join(args.outdir, review.slug)
+    if args.addon.isdigit():
+        addonpath = os.path.join(args.outdir, args.addon)
+    else:
+        addonpath = os.path.join(args.outdir, review.slug)
 
     if os.path.exists(addonpath):
         print("Warning: add-on directory already exists and may contain stale files")
