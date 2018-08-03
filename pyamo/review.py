@@ -94,7 +94,7 @@ class Review(object):
             if req.headers['location'].startswith(AMO_EDITOR_BASE):
                 req = self.session.get(req.headers['location'], stream=True, allow_redirects=False)
             else:
-                raise req.raise_for_status()
+                req.raise_for_status()
 
         req.raw.decode_content = True
         doc = lxml.html.parse(req.raw).getroot()
