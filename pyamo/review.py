@@ -91,8 +91,9 @@ class Review(object):
 
             raise Exception(message[1].strip())
         elif req.status_code == 301:
-            if req.headers['location'].startswith(AMO_EDITOR_BASE):
-                req = self.session.get(req.headers['location'], stream=True, allow_redirects=False)
+            target = urljoin(self.url, req.headers['location'])
+            if target.startswith(AMO_EDITOR_BASE):
+                req = self.session.get(target, stream=True, allow_redirects=False)
             else:
                 req.raise_for_status()
 
@@ -109,7 +110,7 @@ class Review(object):
         slugnodes = doc.xpath('//*[@id="actions-addon"]/li/a')
         slugmatch = re.search(r'/addon/([^/]+)/', slugnodes[0].attrib['href'])
         if not slugmatch:
-            raise Exception("Warning: could not determine slug for " + self.addonid);
+            raise Exception("Warning: could not determine slug for " + self.addonid)
 
         self.slug = slugmatch.group(1).strip('/').rpartition('/')[-1]
         self.addonid = doc.xpath(csspath('#addon'))[0].attrib['data-id']
