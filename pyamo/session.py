@@ -55,11 +55,8 @@ class AmoSession(requests.Session):
                 return req
 
     def check_login_succeeded(self, req):
-        old_login_url = '%s/firefox/users/login' % AMO_BASE
-        oauth_login_slice = 'v1/authorization'
-
         target_url = req.headers['location'] if req.status_code == 302 else req.url
-        islogin = target_url.startswith(old_login_url) or oauth_login_slice in target_url
+        islogin = target_url.endswith("users/login") or "v1/authorization" in target_url
 
         loginsuccess = False
         doc = None
@@ -87,7 +84,7 @@ class AmoSession(requests.Session):
 
         if logindoc is None:
             req = super(AmoSession, self).request('get',
-                                                  '%s/firefox/users/login' % AMO_BASE,
+                                                  '%s/users/login' % AMO_BASE,
                                                   stream=True)
             req.raw.decode_content = True
             logindoc = lxml.html.parse(req.raw).getroot()
