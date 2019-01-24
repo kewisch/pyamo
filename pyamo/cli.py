@@ -89,6 +89,8 @@ def cmd_admindisable(handler, amo, args):
                          help='Disable only add-ons with this channel')
     handler.add_argument('-s', '--status', default=None,
                          help='Disable only add-ons with this status')
+    handler.add_argument('-U', '--unlisted', action='store_true',
+                         help='assume ids are unlisted')
     handler.add_argument('-m', '--message', default=None, help='Also send a rejection message')
     args = handler.parse_args(args)
 
@@ -115,7 +117,7 @@ def cmd_admindisable(handler, amo, args):
     sys.stdout.write("Disabling...")
     sys.stdout.flush()
     for addon in addons:
-        review = amo.get_review(addon)
+        review = amo.get_review(addon, unlisted=args.unlisted)
         success = True
         if args.message:
             versionids = review.get_enabled_version_numbers()
