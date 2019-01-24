@@ -124,6 +124,13 @@ class Review(object):
             i.attrib['value'] for i in doc.xpath(csspath('[name="action"]'))
         ]
 
+        downloadnodes = doc.xpath('//strong[@class="downloads"]')
+        self.downloads = 0
+        if len(downloadnodes):
+            self.downloads = int(downloadnodes[0].text.replace(",", ""))
+
+        self.adu = int(downloadnodes[1].text.replace(",", "")) if len(downloadnodes) > 1 else 0
+
         first_page_path = "#review-files-paginate > .pagination > li > strong:first-of-type"
         first_page_node = doc.xpath(csspath(first_page_path))
         is_first_page = first_page_node[0].text == "1" if len(first_page_node) else True

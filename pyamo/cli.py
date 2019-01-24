@@ -246,17 +246,36 @@ def cmd_adminstatus(handler, amo, args):
 
 @subcmd('info', help="Show basic information about an add-on")
 def cmd_info(handler, amo, args):
-    handler.add_argument('addon', help='the addon id or url to show info about')
+    handler.add_argument('addon', nargs='*', help='the addon id or url to show info about')
+    handler.add_argument('-f', '--files', action='store_true',
+                         help='Show information about versions and files')
+    handler.add_argument('-s', '--stats', action='store_true',
+                         help='Show usage statistics')
     args = handler.parse_args(args)
 
-    review = amo.get_review(args.addon)
-    print("%s (%s)" % (review.addonname, review.url))
-    for version in review.versions:
-        print("\tVersion %s @ %s" % (version.version, version.date))
-        for fileobj in version.files:
-            print("\t\tFile #%s (%s): %s" % (fileobj.slug, fileobj.status, fileobj.url))
-        if version.sources:
-            print("\t\tSources: %s" % version.sources)
+    adu_total = 0
+    adu_max = 0
+    downloads_total = 0
+
+    for addon in args.addon:
+        review = amo.get_review(addon)
+        print("%s (%s)" % (review.addonname, review.url))
+        if args.stats:
+            print("\tDownloads: %d\n\tActive Daily Users: %d" % (review.downloads, review.adu))
+            adu_total += review.adu
+            downloads_total += review.downloads
+            adu_max = max(adu_max, review.adu)
+        if args.files:
+            for version in review.versions:
+                print("\tVersion %s @ %s" % (version.version, version.date))
+                for fileobj in version.files:
+                    print("\t\tFile #%s (%s): %s" % (fileobj.slug, fileobj.status, fileobj.url))
+                if version.sources:
+                    print("\t\tSources: %s" % version.sources)
+
+    if args.stats and len(args.addon) > 1:
+        print("\nTotal downloads: %d\nTotal Active Daily Users: %d" % (downloads_total, adu_total))
+        print("Maximum Active Daily Users: %d" % (adu_max))
 
 
 @subcmd('list', help="List add-ons in the given queue")
