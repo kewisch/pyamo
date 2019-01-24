@@ -100,20 +100,22 @@ class Review(object):
         req.raw.decode_content = True
         doc = lxml.html.parse(req.raw).getroot()
 
-        self.addonname = doc.xpath(csspath('h2.addon span:first-of-type'))[0].text
+        namenodes = doc.xpath(csspath('h2.addon span:first-of-type'))
+        self.addonname = namenodes[0].text.strip().replace("Review ", "", 1)
+
         self.token = doc.xpath(csspath('form input[name="csrfmiddlewaretoken"]'))[0].attrib['value']
         self.enabledversions = map(lambda x: x.attrib['value'],
                                    doc.xpath(csspath('#id_versions > option')))
         tokennodes = doc.xpath(csspath("#extra-review-actions"))
         self.api_token = tokennodes[0].attrib['data-api-token'] if tokennodes else None
 
-        slugnodes = doc.xpath('//*[@id="actions-addon"]/li/a')
-        slugmatch = re.search(r'/addon/([^/]+)/', slugnodes[0].attrib['href'])
-        if not slugmatch:
-            raise Exception("Warning: could not determine slug for " + self.addonid)
-
-        self.slug = slugmatch.group(1).strip('/').rpartition('/')[-1]
         self.addonid = doc.xpath(csspath('#addon'))[0].attrib['data-id']
+        slugnodes = doc.xpath('//*[@id="actions-addon"]/li/a[@href!=""]')
+        self.slug = self.addonid
+        if len(slugnodes):
+            slugmatch = re.search(r'/addon/([^/]+)/', slugnodes[0].attrib['href'])
+            if slugmatch:
+                self.slug = slugmatch.group(1).strip('/').rpartition('/')[-1]
 
         if self.unlisted:
             self.url = '%s/review-unlisted/%s' % (AMO_EDITOR_BASE, self.slug)
