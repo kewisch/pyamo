@@ -26,8 +26,8 @@ AMO_INTERNAL_HOST = os.environ.get('AMO_HOST', 'addons-internal.prod.mozaws.net'
 
 AMO_BASE = "https://%s/en-US" % AMO_HOST
 AMO_INTERNAL_BASE = "https://%s/en-US" % AMO_INTERNAL_HOST
-AMO_API_BASE = "https://%s/api/v3" % AMO_HOST
-AMO_REVIEWERS_API_BASE = "https://reviewers.%s/api/v3/reviewers" % AMO_HOST
+AMO_API_BASE = "https://%s/api/v4" % AMO_HOST
+AMO_REVIEWERS_API_BASE = "https://reviewers.%s/api/v4/reviewers" % AMO_HOST
 AMO_EDITOR_BASE = 'https://reviewers.%s/en-US/reviewers' % AMO_HOST
 AMO_ADMIN_BASE = '%s/admin' % AMO_INTERNAL_BASE
 AMO_DEVELOPER_BASE = '%s/developers' % AMO_BASE
