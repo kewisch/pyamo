@@ -6,13 +6,12 @@
 from __future__ import print_function
 
 import os
-import json
 import pickle
 
-import lxml.html
+import urlparse
 import requests
 
-from .utils import AMO_BASE, AMO_API_BASE, AMO_ADMIN_BASE, FXASession
+from .utils import AMO_API_BASE, AMO_ADMIN_BASE, FXASession
 
 
 class AmoSession(requests.Session):
@@ -59,51 +58,45 @@ class AmoSession(requests.Session):
         islogin = target_url.endswith("users/login") or "v1/authorization" in target_url
 
         loginsuccess = False
-        doc = None
 
         while islogin and not loginsuccess:
-            if doc is not None:
-                if req.raw:
-                    req.raw.decode_content = True
-                    doc = lxml.html.parse(req.raw).getroot()
-                else:
-                    doc = lxml.html.fromstring(req.content)
-
             if self.loginfail > 2 or not self.login_prompter:
                 raise requests.exceptions.HTTPError(401)
             self.loginfail += 1
 
             print("Incorrect user/password or session expired")
 
-            loginsuccess = self.login(doc)
+            loginsuccess = self.login()
 
         return not islogin
 
-    def login(self, logindoc=None):
+    def login(self):
         self.cookies.clear_expired_cookies()
 
-        if logindoc is None:
-            req = super(AmoSession, self).request('get',
-                                                  '%s/users/login' % AMO_BASE,
-                                                  stream=True)
-            req.raw.decode_content = True
-            logindoc = lxml.html.parse(req.raw).getroot()
+        login_url = '%s/accounts/login/start/?config=amo&to=/en-US/firefox/' % AMO_API_BASE
+        req = super(AmoSession, self).request('get', login_url, allow_redirects=False)
 
-        fxaconfig = json.loads(logindoc.body.attrib['data-fxa-config'])
-        api_host = fxaconfig['oauthHost'].replace('oauth', 'api')
+        if req.status_code != 302:
+            return False
 
-        with FXASession(api_host, fxaconfig, self.login_prompter) as session:
+        urlparts = urlparse.urlparse(req.headers['Location'])
+        query = urlparse.parse_qs(urlparts.query)
+        scope = query['scope'][0]
+        client_id = query['client_id'][0]
+        origin = 'https://' + urlparts.hostname
+
+        with FXASession(origin, scope, client_id, self.login_prompter) as session:
             code = session.authorize_code()
 
             redirdata = {
-                # The second part of the state is /en-US/firefox in base64
-                'state': "%s:L2VuLVVTL2ZpcmVmb3gv" % fxaconfig['state'],
-                'action': 'signin',
-                'code': code
+                'config': 'amo',
+                'code': code,
+                'state': query['state'][0],
+                'action': 'signin'
             }
 
             req = super(AmoSession, self).request('get',
-                                                  '%s/accounts/authenticate/' % AMO_API_BASE,
+                                                  query['redirect_url'][0],
                                                   params=redirdata, allow_redirects=False)
 
         return req.status_code == 302

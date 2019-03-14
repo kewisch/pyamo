@@ -81,13 +81,13 @@ def flagstr(obj, name, altname=None):
 
 class FXASession(object):
     # pylint: disable=too-few-public-methods
-    def __init__(self, api_url, fxaconfig, login_prompter):
-        self.scope = fxaconfig['scope']
-        self.client_id = fxaconfig['clientId']
+    def __init__(self, oauth_origin, scope, client_id, login_prompter):
+        self.scope = scope
+        self.client_id = client_id
         self.login_prompter = login_prompter
 
-        self.client = fxa.core.Client(server_url=api_url)
-        self.oauth_client = fxa.oauth.Client(server_url=fxaconfig['oauthHost'])
+        self.client = fxa.core.Client(server_url=oauth_origin.replace("oauth", "api"))
+        self.oauth_client = fxa.oauth.Client(server_url=oauth_origin)
         self.session = None
 
     def __enter__(self):
