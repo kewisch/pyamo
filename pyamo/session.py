@@ -6,7 +6,7 @@
 from __future__ import print_function
 
 import os
-import pickle
+import json
 
 import urlparse
 import requests
@@ -28,15 +28,17 @@ class AmoSession(requests.Session):
         if self.cookiefile:
             try:
                 with open(cookiefile) as fdr:
-                    cookies = requests.utils.cookiejar_from_dict(pickle.load(fdr))
-                    self.cookies = cookies
+                    try:
+                        self.cookies = requests.utils.cookiejar_from_dict(json.load(fdr))
+                    except:
+                        self.cookes = {}
             except IOError:
                 pass
 
     def persist(self):
         if self.cookiefile:
-            with os.fdopen(os.open(self.cookiefile, os.O_WRONLY | os.O_CREAT, 0600), 'w') as fdr:
-                pickle.dump(requests.utils.dict_from_cookiejar(self.cookies), fdr)
+            with os.fdopen(os.open(self.cookiefile, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0600), 'w') as fdr:
+                json.dump(requests.utils.dict_from_cookiejar(self.cookies), fdr)
 
     def request(self, method, url, *args, **kwargs):
         if 'timeout' not in kwargs:
