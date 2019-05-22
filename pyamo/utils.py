@@ -132,7 +132,7 @@ class AmoConfigParser(object):
         if sys.platform.startswith("win"):
             configfilepath = os.path.expanduser("~/amorc.json")
         else:
-            configfilepath = os.path.expanduser('~/.amorc')
+            configfilepath = os.path.expanduser("~/.amorc")
 
         with open(configfilepath) as fp:
             self.data = json.load(fp)

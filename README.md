@@ -23,28 +23,35 @@ The command line tool is installed under the name `amo` and has the following co
 Configuration
 -------------
 The amo utility supports setting some configuration values. The file needs to be placed in
-`~/.amorc` on Unix, or `%HOME%/amorc.ini` on Windows.
+`~/.amorc` on Unix, or `%HOME%/amorc.json` on Windows.
 
-The `[defaults]` section allows to configure defaults for optional arguments. Here are some
+The `defaults` section allows to configure defaults for optional arguments. Here are some
 examples:
 
-```ini
-[defaults]
-out = --outdir ~/path/to/amofolder --binary ~/path/to/run_in_vm.py
-run = --outdir ~/path/to/amofolder --binary ~/path/to/run_in_vm.py
-logs = -k reviewer
-decide = -f
-```
+```json
+{
+  "pyamo": {
+    "defaults": {
+      "out": "--outdir ~/path/to/amofolder --binary ~/path/to/run_in_vm.py",
+      "run": "--outdir ~/path/to/amofolder --binary ~/path/to/run_in_vm.py",
+      "logs": "-k reviewer",
+      "decide": "-f"
+    }
+  }
+}
 
 It is highly recommended to set a the `--outdir` argument as default, to make
 sure all add-ons end up in the same folder.
 
-The `[auth]` section allows to specify an authentication key for redash, which is only necessary for
+The `auth` section allows to specify an authentication key for redash, which is only necessary for
 admin commands.
 
-```init
-[auth]
-redash_key=42c85d86fd212538f4394f47c80fa62c
+```json
+{
+  "auth": {
+    "redash_key": "42c85d86fd212538f4394f47c80fa62c"
+  }
+}
 ```
 
 Examples
