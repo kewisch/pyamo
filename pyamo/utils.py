@@ -9,8 +9,8 @@ import os
 import re
 import sys
 import requests
+import json
 
-from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 from pytz import timezone
 from mozrunner import FirefoxRunner
 
@@ -127,30 +127,29 @@ def requiresvpn(fn):
     return wrapper
 
 
-class AmoConfigParser(ConfigParser):
+class AmoConfigParser(object):
     def __init__(self, *args, **kwargs):
-        ConfigParser.__init__(self, *args, **kwargs)
-
         if sys.platform.startswith("win"):
-            configfilepath = os.path.expanduser("~/amorc.ini")
+            configfilepath = os.path.expanduser("~/amorc.json")
         else:
             configfilepath = os.path.expanduser('~/.amorc')
-        self.read(configfilepath)
+
+        with open(configfilepath) as fp:
+            self.data = json.load(fp)
 
     def get(self, *args, **kwargs):
-        hasfallback = False
-        if "fallback" in kwargs:
-            fallback = kwargs['fallback']
-            hasfallback = True
-            del kwargs['fallback']
-
         try:
-            return ConfigParser.get(self, *args, **kwargs)
-        except (NoOptionError, NoSectionError):
-            if hasfallback:
-                return fallback
+            data = self.data
+            while len(args):
+                data = data[args[0]]
+                args = args[1:]
+
+            return data
+        except KeyError, e:
+            if "fallback" in kwargs:
+                return kwargs["fallback"]
             else:
-                raise
+                raise e
 
 
 # global config instance
@@ -161,8 +160,8 @@ def parse_args_with_defaults(handler, cmd, args):
     # Read the defaults from the config file, if it does not exist just parse
     # options as usual.
     try:
-        defaults = AMO_CONFIG.get('defaults', cmd).split(" ")
-    except (NoOptionError, NoSectionError):
+        defaults = AMO_CONFIG.get('pyamo', 'defaults', cmd).split(" ")
+    except KeyError:
         return handler.parse_args(args)
 
     # Create an argument parser that takes just the options, but no defaults or
