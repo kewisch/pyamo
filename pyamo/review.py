@@ -349,6 +349,9 @@ class AddonVersionFile(object):
         if not self.savedpath:
             self.save(targetpath)
 
+        if self.savedpath.endswith(".xml"):
+            return
+
         xpidir = "xpi" + self._platformsuffix
         extractpath = os.path.join(targetpath, self.parent.version, xpidir)
         try:
@@ -360,7 +363,13 @@ class AddonVersionFile(object):
             zf.extractall(extractpath.decode("utf-8"))
 
     def save(self, targetpath, chunksize=16384):
-        xpifile = "addon%s.xpi" % (self._platformsuffix)
+        response = self.session.get(self.url, stream=True)
+
+        if response.headers['content-type'] == "application/x-xpinstall":
+            xpifile = "addon%s.xpi" % (self._platformsuffix)
+        elif response.headers['content-type'].startswith("text/xml"):
+            xpifile = "addon.xml"
+
         self.savedpath = os.path.join(targetpath, self.parent.version, xpifile)
 
         try:
@@ -369,7 +378,7 @@ class AddonVersionFile(object):
             pass
 
         with open(self.savedpath, 'wb') as fd:
-            for chunk in self.session.get(self.url, stream=True).iter_content(chunksize):
+            for chunk in response.iter_content(chunksize):
                 fd.write(chunk)
 
     def createprofile(self, targetpath, delete=False):
