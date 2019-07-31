@@ -37,7 +37,10 @@ class AdminUserInfoAddons(object):
         return self
 
     def __str__(self):
-        return "\n".join(["[{slugid: <32}] {name}".format(**elem) for elem in self.data])
+        return self.__unicode__().encode("utf8")
+
+    def __unicode__(self):
+        return "\n".join([u'[{slugid: <32}] {name}'.format(**elem) for elem in self.data])
 
 
 class AdminRedashInfo(object):
