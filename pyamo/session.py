@@ -30,14 +30,15 @@ class AmoSession(requests.Session):
                 with open(cookiefile) as fdr:
                     try:
                         self.cookies = requests.utils.cookiejar_from_dict(json.load(fdr))
-                    except:
+                    except Exception:
                         self.cookes = {}
             except IOError:
                 pass
 
     def persist(self):
         if self.cookiefile:
-            with os.fdopen(os.open(self.cookiefile, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0600), 'w') as fdr:
+            mode = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+            with os.fdopen(os.open(self.cookiefile, mode, 0600), 'w') as fdr:
                 json.dump(requests.utils.dict_from_cookiejar(self.cookies), fdr)
 
     def request(self, method, url, *args, **kwargs):
