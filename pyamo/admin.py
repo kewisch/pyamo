@@ -13,6 +13,8 @@ from .utils import AMO_BASE, AMO_ADMIN_BASE, AMO_EDITOR_BASE, AMO_REVIEWERS_API_
                    REV_ADDON_STATE, REV_ADDON_FILE_STATE, csspath
 import lxml.html
 
+from urlparse import urljoin
+
 
 class AdminUserInfoAddons(object):
 
@@ -139,6 +141,10 @@ class AdminInfo(object):
                 raise Exception("Invalid response")
 
             raise Exception(message[1].strip())
+        elif req.status_code == 301:
+            righturl = urljoin(self.url, req.headers["Location"])
+            self.url = righturl[:righturl.find("?")]
+            req = self.session.get(righturl, stream=True, allow_redirects=False)
 
         req.raw.decode_content = True
         doc = lxml.html.parse(req.raw).getroot()
