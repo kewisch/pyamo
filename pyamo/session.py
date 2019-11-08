@@ -11,7 +11,7 @@ import json
 import urlparse
 import requests
 
-from .utils import AMO_API_BASE, AMO_ADMIN_BASE, FXASession
+from .utils import AMO_API_BASE, AMO_API_BASE_V3, AMO_ADMIN_BASE, FXASession
 
 
 class AmoSession(requests.Session):
@@ -92,14 +92,13 @@ class AmoSession(requests.Session):
             code = session.authorize_code()
 
             redirdata = {
-                'config': 'amo',
                 'code': code,
                 'state': query['state'][0],
                 'action': 'signin'
             }
 
-            req = super(AmoSession, self).request('get',
-                                                  query['redirect_url'][0],
+            redirect_url = "%s/accounts/authenticate/" % AMO_API_BASE_V3
+            req = super(AmoSession, self).request('get', redirect_url,
                                                   params=redirdata, allow_redirects=False)
 
         return req.status_code == 302
