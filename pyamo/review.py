@@ -110,12 +110,7 @@ class Review(object):
         self.api_token = tokennodes[0].attrib['data-api-token'] if tokennodes else None
 
         self.addonid = doc.xpath(csspath('#addon'))[0].attrib['data-id']
-        slugnodes = doc.xpath('//*[@id="actions-addon"]/li/a[@href!=""]')
-        self.slug = self.addonid
-        if len(slugnodes):
-            slugmatch = re.search(r'/addon/([^/]+)/', slugnodes[0].attrib['href'])
-            if slugmatch:
-                self.slug = slugmatch.group(1).strip('/').rpartition('/')[-1]
+        self.slug = doc.xpath(csspath("#whiteboard_form"))[0].attrib['action'].split("/")[-1]
 
         if self.unlisted:
             self.url = '%s/review-unlisted/%s' % (AMO_EDITOR_BASE, self.slug)

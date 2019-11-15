@@ -337,15 +337,12 @@ def cmd_get(handler, amo, args):
     args = parse_args_with_defaults(handler, 'get', args)
 
     args.outdir = os.path.expanduser(args.outdir)
-    if os.path.abspath(os.path.expanduser(args.outdir)) != os.getcwd():
-        print("Warning: the specified output directory is not the current"
-              " directory, please cd %s" % os.path.join(args.outdir, args.addon))
 
     review = amo.get_review(args.addon, args.unlisted)
-    if args.addon.isdigit():
-        addonpath = os.path.join(args.outdir, args.addon)
-    else:
-        addonpath = os.path.join(args.outdir, review.slug)
+    addonpath = os.path.join(args.outdir, review.slug)
+
+    if os.path.abspath(args.outdir) != os.getcwd() or review.slug != args.addon:
+        print("Saving add-on to %s" % addonpath)
 
     if os.path.exists(addonpath):
         print("Warning: add-on directory already exists and may contain stale files")
