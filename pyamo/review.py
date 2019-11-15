@@ -11,7 +11,7 @@ import cgi
 import shutil
 import traceback
 
-from zipfile import ZipFile
+from zipfile import ZipFile, BadZipfile
 from urlparse import urlparse, urljoin
 from mozprofile import FirefoxProfile
 
@@ -359,8 +359,11 @@ class AddonVersionFile(object):
         except OSError:
             pass
 
-        with ZipFile(self.savedpath, 'r') as zf:
-            zf.extractall(extractpath.decode("utf-8"))
+        try:
+            with ZipFile(self.savedpath, 'r') as zf:
+                zf.extractall(extractpath.decode("utf-8"))
+        except BadZipfile:
+            print("Could not extract xpi, skipping")
 
     def save(self, targetpath, chunksize=16384):
         response = self.session.get(self.url, stream=True)
@@ -369,6 +372,8 @@ class AddonVersionFile(object):
             xpifile = "addon%s.xpi" % (self._platformsuffix)
         elif response.headers['content-type'].startswith("text/xml"):
             xpifile = "addon.xml"
+        else:
+            raise Exception("Unknown content type " + response.headers['content-type'])
 
         self.savedpath = os.path.join(targetpath, self.parent.version, xpifile)
 
