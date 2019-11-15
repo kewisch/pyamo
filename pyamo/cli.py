@@ -339,15 +339,20 @@ def cmd_get(handler, amo, args):
     args.outdir = os.path.expanduser(args.outdir)
 
     review = amo.get_review(args.addon, args.unlisted)
-    addonpath = os.path.join(args.outdir, review.slug)
+    if len(review.versions) == 0:
+        print("Warning: No listed versions, trying unlisted")
+        args.unlisted = True
+        review = amo.get_review(args.addon, args.unlisted)
 
-    if os.path.abspath(args.outdir) != os.getcwd() or review.slug != args.addon:
-        print("Saving add-on to %s" % addonpath)
+    addonpath = os.path.join(args.outdir, review.slug)
 
     if os.path.exists(addonpath):
         print("Warning: add-on directory already exists and may contain stale files")
     else:
         os.mkdir(addonpath)
+
+    if os.path.abspath(args.outdir) != os.getcwd() or review.slug != args.addon:
+        print("Saving add-on to %s" % addonpath)
 
     if args.run:
         args.profile = True
