@@ -191,8 +191,11 @@ class Review(object):
             'info_request_deadline': 7,
             'versions': versionids
         }
+        headers = {
+            'referer': self.url
+        }
 
-        req = self.session.post(self.url, data=postdata)
+        req = self.session.post(self.url, data=postdata, headers=headers)
         return req.status_code == 200
 
     def admin_disable(self):
