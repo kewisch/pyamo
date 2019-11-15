@@ -10,6 +10,7 @@ import re
 import cgi
 import shutil
 import traceback
+import tarfile
 
 from zipfile import ZipFile, BadZipfile
 from urlparse import urlparse, urljoin
@@ -288,6 +289,9 @@ class AddonReviewVersion(object):
                     zf.extractall(extractpath)
             elif mime == "application/zip":
                 with ZipFile(self.sourcepath, 'r') as zf:
+                    zf.extractall(extractpath)
+            elif mime == "application/x-gzip":
+                with tarfile.open(self.sourcepath, 'r:gz') as zf:
                     zf.extractall(extractpath)
             else:
                 print("Don't know how to handle %s, skipping extraction" % mime)
