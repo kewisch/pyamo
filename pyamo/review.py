@@ -26,12 +26,6 @@ import magic
 class Review(object):
     # pylint: disable=too-few-public-methods,too-many-instance-attributes
 
-    REVIEW_STATUS_TO_LAST_ACCEPT = {
-        "Awaiting Review": ("Approved",),
-        "Rejected": ("Approved",),
-        "Approved": ("Approved",),
-    }
-
     def __init__(self, parent, id_or_url, unlisted=False):
         id_or_url = str(id_or_url)
         if id_or_url.startswith(AMO_BASE) or id_or_url.startswith(AMO_EDITOR_BASE):
@@ -60,15 +54,15 @@ class Review(object):
         else:
             return None
 
-    def find_previous_version(self):
-        lateststatus = self.versions[-1].files[0].status
-        findstatus = Review.REVIEW_STATUS_TO_LAST_ACCEPT.get(lateststatus, None)
-
-        if not findstatus:
-            raise Exception("Don't know how to handle review status %s" % lateststatus)
-
+    def find_latest_version_wx(self):
         for version in reversed(self.versions):
-            if len(version.files) and version.files[0].status in findstatus:
+            if any(vfile.permissions for vfile in version.files):
+                return version
+        return None
+
+    def find_previous_version(self):
+        for version in reversed(self.versions[:-1]):
+            if version.confirmed:
                 return version
         return None
 
@@ -224,6 +218,9 @@ class AddonReviewVersion(object):
         _, self.version, _, month, day, year = filter(None, args)  # pylint: disable=bad-builtin
         self.date = '%s %s %s' % (month, day, year)
 
+        lights = head.xpath(csspath("th .light"))
+        self.confirmed = len(lights) > 1 and lights[1].text == "(Confirmed)"
+
         self.id = None
         if self.version in self.parent.versionmap:
             self.id = self.parent.versionmap[self.version]
@@ -329,6 +326,9 @@ class AddonVersionFile(object):
 
         statusdiv = fileinfo.xpath(csspath('.light > div'))
         self.status = statusdiv[0].text.strip()
+
+        permnode = fileinfo.xpath(csspath(".file-permissions strong"))
+        self.permissions = permnode[0].tail.strip() if len(permnode) else None
 
         urlpath = urlparse(self.url).path
         urlpathparts = urlpath.split('/')

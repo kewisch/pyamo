@@ -363,6 +363,7 @@ def cmd_get(handler, amo, args):
     if args.version and len(args.version):
         argversions = set(args.version)
         replace_version_tag(argversions, "latest", review.find_latest_version)
+        replace_version_tag(argversions, "latestwx", review.find_latest_version_wx)
 
         def find_versions(versions, page):
             replace_version_tag(argversions, "previous", review.find_previous_version, quiet=True)
