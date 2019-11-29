@@ -507,6 +507,7 @@ def cmd_decide(handler, amo, args):
 
         versions = review.versions if args.all else [review.versions[-1]]
         review.decide(args.action, args.message, versions)
+        print("%s completed" % addon)
 
     print("Done")
 
