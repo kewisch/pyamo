@@ -331,86 +331,92 @@ def cmd_get(handler, amo, args):
                          help='use the unlisted review page')
     handler.add_argument('-v', '--version', action='append', default=[],
                          help='pull a specific version')
-    handler.add_argument('addon',
+    handler.add_argument('addon', nargs='+',
                          help='the addon id or url to get')
 
     args = parse_args_with_defaults(handler, 'get', args)
 
     args.outdir = os.path.expanduser(args.outdir)
 
-    review = amo.get_review(args.addon, args.unlisted)
-    if len(review.versions) == 0:
-        print("Warning: No listed versions, trying unlisted")
-        args.unlisted = True
-        review = amo.get_review(args.addon, args.unlisted)
-
-    addonpath = os.path.join(args.outdir, review.slug)
-
-    if os.path.exists(addonpath):
-        print("Warning: add-on directory already exists and may contain stale files")
-    else:
-        os.mkdir(addonpath)
-
-    if os.path.abspath(args.outdir) != os.getcwd() or review.slug != args.addon:
-        print("Saving add-on to %s" % addonpath)
-
     if args.run:
         args.profile = True
 
-    if args.diff:
-        args.version.extend(('previous', 'latest'))
+    for addon in args.addon:
 
-    if args.version and len(args.version):
-        argversions = set(args.version)
-        replace_version_tag(argversions, "latest", review.find_latest_version)
-        replace_version_tag(argversions, "latestwx", review.find_latest_version_wx)
+        if len(args.addon) > 1:
+            print("Getting add-on %s" % addon)
 
-        def find_versions(versions, page):
-            replace_version_tag(argversions, "previous", review.find_previous_version, quiet=True)
-            argmatch = [v for v in versions if v.version in argversions]
-            if len(argmatch) == len(argversions):
-                return argmatch
-            else:
-                print("Warning: could not find all requested version on page",
-                      "%d, trying next page" % page)
-                return False
+        review = amo.get_review(addon, args.unlisted)
+        if len(review.versions) == 0:
+            print("Warning: No listed versions, trying unlisted")
+            args.unlisted = True
+            review = amo.get_review(addon, args.unlisted)
 
-        versions = review.get_versions_until(find_versions, [])
+        addonpath = os.path.join(args.outdir, review.slug)
 
-        if not len(versions):
-            print("Error: could not find version %s" % args.version)
-            return
+        if os.path.exists(addonpath):
+            print("Warning: add-on directory already exists and may contain stale files")
+        else:
+            os.mkdir(addonpath)
 
-    else:
-        review.get_versions_until(lambda versions, _: len(versions) >= args.limit)
-        versions = review.versions[-args.limit:]
+        if os.path.abspath(args.outdir) != os.getcwd() or review.slug != addon:
+            print("Saving add-on to %s" % addonpath)
 
-    for version in versions:
-        platforms = ", ".join(version.apps)
-        print('Getting version %s %s [%s]' % (review.slug, version.version, platforms))
-        for fileobj in version.files:
-            fileplatforms = ", ".join(fileobj.platforms)
-            print('\tGetting file %s [%s]' % (fileobj.filename, fileplatforms))
-            fileobj.save(addonpath)
-            fileobj.extract(addonpath)
-            if args.profile:
-                print('\tCreating profile [%s]' % fileplatforms)
-                fileobj.createprofile(addonpath)
+        if args.diff:
+            args.version.extend(('previous', 'latest'))
 
-        if version.sources:
-            sys.stdout.write('\tGetting sources')
+        if args.version and len(args.version):
+            argversions = set(args.version)
+            replace_version_tag(argversions, "latest", review.find_latest_version)
+            replace_version_tag(argversions, "latestwx", review.find_latest_version_wx)
 
-            version.savesources(addonpath)
-            print(' ' + version.sourcefilename)
-            version.extractsources(addonpath)
+            def find_versions(versions, page):
+                replace_version_tag(argversions,
+                                    "previous",
+                                    review.find_previous_version, quiet=True)
+                argmatch = [v for v in versions if v.version in argversions]
+                if len(argmatch) == len(argversions):
+                    return argmatch
+                else:
+                    print("Warning: could not find all requested version on page",
+                          "%d, trying next page" % page)
+                    return False
 
-    if args.run:
-        print('Running applicaton for %s %s' % (review.slug, versions[-1].version))
-        if not args.binary:
-            print("Warning: you should be running unreviewed extensions in a VM for safety")
-            args.binary = find_binary("firefox")
+            versions = review.get_versions_until(find_versions, [])
 
-        runprofile(args.binary, versions[-1].files[-1])
+            if not len(versions):
+                print("Error: could not find version %s" % args.version)
+                return
+
+        else:
+            review.get_versions_until(lambda versions, _: len(versions) >= args.limit)
+            versions = review.versions[-args.limit:]
+
+        for version in versions:
+            platforms = ", ".join(version.apps)
+            print('Getting version %s %s [%s]' % (review.slug, version.version, platforms))
+            for fileobj in version.files:
+                fileplatforms = ", ".join(fileobj.platforms)
+                print('\tGetting file %s [%s]' % (fileobj.filename, fileplatforms))
+                fileobj.save(addonpath)
+                fileobj.extract(addonpath)
+                if args.profile:
+                    print('\tCreating profile [%s]' % fileplatforms)
+                    fileobj.createprofile(addonpath)
+
+            if version.sources:
+                sys.stdout.write('\tGetting sources')
+
+                version.savesources(addonpath)
+                print(' ' + version.sourcefilename)
+                version.extractsources(addonpath)
+        if args.run:
+            print('Running applicaton for %s %s' % (review.slug, versions[-1].version))
+            if not args.binary:
+                print("Warning: you should be running unreviewed extensions in a VM for safety")
+                args.binary = find_binary("firefox")
+
+            runprofile(args.binary, versions[-1].files[-1])
 
 
 @subcmd('run', help="Run an add-on in Firefox (preferably in a VM)")
