@@ -35,6 +35,16 @@ AMO_DEVELOPER_BASE = '%s/developers' % AMO_BASE
 AMO_TIMEZONE = timezone("America/Los_Angeles")
 
 VALIDATION_WAIT = 5
+RE_VERSION = re.compile(r"""(?P<major>\d+|\*)      # major (x in x.y)
+                            \.?(?P<minor1>\d+|\*)? # minor1 (y in x.y)
+                            \.?(?P<minor2>\d+|\*)? # minor2 (z in x.y.z)
+                            \.?(?P<minor3>\d+|\*)? # minor3 (w in x.y.z.w)
+                            (?P<alpha>[a|b]?)      # alpha/beta
+                            (?P<alpha_ver>\d*)     # alpha/beta version
+                            (?P<pre>pre)?          # pre release
+                            (?P<pre_ver>\d)?       # pre release version
+                        """,
+                        re.VERBOSE)
 RE_VERSION_BETA = re.compile(r"""(a|alpha|b|beta|pre|rc) # Either of these
                               (([\.-]\d)?\d*)         # followed by nothing
                               $                       # or 123 or .123 or -123

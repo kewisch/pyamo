@@ -22,7 +22,7 @@ import httplib
 from arghandler import subcmd, ArgumentHandler
 from .service import AddonsService
 from .utils import find_binary, runprofile, parse_args_with_defaults, \
-                   requiresvpn, RE_VERSION_BETA, ADDON_STATE, ADDON_FILE_STATE, \
+                   requiresvpn, RE_VERSION, RE_VERSION_BETA, ADDON_STATE, ADDON_FILE_STATE, \
                    REV_ADDON_STATE, REV_ADDON_FILE_STATE
 
 DEFAULT_MESSAGE = {
@@ -342,6 +342,10 @@ def cmd_get(handler, amo, args):
         args.profile = True
 
     for addon in args.addon:
+        if addon == '.':
+            addon = os.path.basename(os.getcwd())
+            if RE_VERSION.search(addon):
+                addon = os.path.basename(os.path.dirname(os.getcwd()))
 
         if len(args.addon) > 1:
             print("Getting add-on %s" % addon)
