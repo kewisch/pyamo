@@ -330,7 +330,7 @@ def cmd_get(handler, amo, args):
     handler.add_argument('-u', '--unlisted', action='store_true',
                          help='use the unlisted review page')
     handler.add_argument('-v', '--version', action='append', default=[],
-                         help='pull a specific version')
+                         help='pull a specific version. Prefix with @ to reference a version id.')
     handler.add_argument('addon', nargs='+',
                          help='the addon id or url to get')
 
@@ -370,7 +370,14 @@ def cmd_get(handler, amo, args):
             args.version.extend(('previous', 'latest'))
 
         if args.version and len(args.version):
-            argversions = set(args.version)
+            argversions = set()
+            argversionids = set()
+            for v in args.version:
+                if v.startswith("@"):
+                    argversionids.add(v[1:])
+                else:
+                    argversions.add(v)
+
             replace_version_tag(argversions, "latest", review.find_latest_version)
             replace_version_tag(argversions, "latestwx", review.find_latest_version_wx)
 
@@ -379,8 +386,10 @@ def cmd_get(handler, amo, args):
                                     "previous",
                                     review.find_previous_version, quiet=True)
                 argmatch = [v for v in versions if v.version in argversions]
-                if len(argmatch) == len(argversions):
-                    return argmatch
+                argidmatch = [v for v in versions if v.id in argversionids]
+
+                if len(argmatch) + len(argidmatch) == len(argversions) + len(argversionids):
+                    return argmatch + argidmatch
                 else:
                     print("Warning: could not find all requested version on page",
                           "%d, trying next page" % page)
