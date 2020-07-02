@@ -225,6 +225,7 @@ class AddonReviewVersion(object):
         lights = head.xpath(csspath("th .light"))
         self.confirmed = len(lights) > 1 and lights[1].text == "(Confirmed)"
 
+        # This will work for non-deleted files, and is better for multiple files per version
         self.id = None
         if self.version in self.parent.versionmap:
             self.id = self.parent.versionmap[self.version]
@@ -233,6 +234,11 @@ class AddonReviewVersion(object):
         fileinfo = body.xpath(csspath('.file-info'))
         for info in fileinfo:
             self.files.append(AddonVersionFile(self, info))
+
+        # This is the fallback to determine the id for deleted add-ons
+        codemgr = fileinfo[0].xpath(csspath("a[href^='https://code.addons.mozilla.org']"))
+        if codemgr and not self.id:
+            self.id = codemgr[0].attrib['href'].split("/")[-2]
 
         sourcelink = body.xpath(csspath('.files > div > a[href]'))
         if len(sourcelink):
