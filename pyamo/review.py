@@ -11,7 +11,7 @@ import traceback
 import tarfile
 
 from zipfile import ZipFile, BadZipfile
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin, unquote
 from mozprofile import FirefoxProfile
 
 import lxml.html
@@ -111,7 +111,7 @@ class Review:
         self.api_token = tokennodes[0].attrib['data-api-token'] if tokennodes else None
 
         self.addonid = doc.xpath(csspath('#addon'))[0].attrib['data-id']
-        self.slug = doc.xpath(csspath("#whiteboard_form"))[0].attrib['action'].split("/")[-1]
+        self.slug = unquote(doc.xpath(csspath("#whiteboard_form"))[0].attrib['action'].split("/")[-1])
 
         if self.unlisted:
             self.url = '%s/review-unlisted/%s' % (AMO_EDITOR_BASE, self.slug)
