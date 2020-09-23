@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 # Portions Copyright (C) Philipp Kewisch, 2015
 
-import os
 from setuptools import setup
 
 setup(
@@ -16,6 +15,7 @@ setup(
     keywords = "amo mozilla add-ons",
     url = "https://github.com/kewisch/pyamo",
     packages = ['pyamo'],
+    python_requires='>=3',
     install_requires = [
         'PyFxA >= 0.7.0',
         'python-magic',
@@ -35,6 +35,7 @@ setup(
     classifiers = [
         "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
         "Development Status :: 4 - Beta",
+        "Programming Language :: Python :: 3",
         "Environment :: Console",
         "Topic :: Utilities",
     ]

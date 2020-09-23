@@ -3,14 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 # Portions Copyright (C) Philipp Kewisch, 2015
 
-from __future__ import print_function
-
 import os
 
 from py7zlib import Archive7z
 
 
-class SevenZFile(object):
+class SevenZFile:
     # pylint: disable=too-few-public-methods
 
     def __init__(self, filepath, mode='rb'):

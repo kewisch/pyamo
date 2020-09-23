@@ -3,24 +3,22 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 # Portions Copyright (C) Philipp Kewisch, 2015-2016
 
-from __future__ import print_function
-
 import os
 import json
 
-import urlparse
+import urllib.parse
 import requests
 
 from .utils import AMO_API_BASE, AMO_API_BASE_V3, AMO_ADMIN_BASE, FXASession
 
 
 class AmoSession(requests.Session):
-    def __init__(self, service, login_prompter, cookiefile=None, *args, **kwargs):
+    def __init__(self, service, login_prompter, *args, cookiefile=None, **kwargs):
         self.service = service
         self.login_prompter = login_prompter
         self.loginfail = 0
         self.timeout = None
-        super(AmoSession, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.load(cookiefile)
 
     def load(self, cookiefile):
@@ -30,7 +28,7 @@ class AmoSession(requests.Session):
                 with open(cookiefile) as fdr:
                     try:
                         self.cookies = requests.utils.cookiejar_from_dict(json.load(fdr))
-                    except Exception:
+                    except Exception: # pylint: disable=broad-except
                         self.cookes = {}
             except IOError:
                 pass
@@ -38,10 +36,10 @@ class AmoSession(requests.Session):
     def persist(self):
         if self.cookiefile:
             mode = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
-            with os.fdopen(os.open(self.cookiefile, mode, 0600), 'w') as fdr:
+            with os.fdopen(os.open(self.cookiefile, mode, 0o600), 'w') as fdr:
                 json.dump(requests.utils.dict_from_cookiejar(self.cookies), fdr)
 
-    def request(self, method, url, *args, **kwargs):
+    def request(self, method, url, **kwargs):  # pylint: disable=arguments-differ
         if 'timeout' not in kwargs:
             if self.timeout:
                 kwargs['timeout'] = (self.timeout, self.timeout)
@@ -51,7 +49,7 @@ class AmoSession(requests.Session):
                 kwargs['timeout'] = (10.0, 10.0)
 
         while True:
-            req = super(AmoSession, self).request(method, url, *args, **kwargs)
+            req = super().request(method, url, **kwargs)
             req.raise_for_status()
             if self.check_login_succeeded(req):
                 return req
@@ -77,13 +75,13 @@ class AmoSession(requests.Session):
         self.cookies.clear_expired_cookies()
 
         login_url = '%s/accounts/login/start/?config=amo&to=/en-US/firefox/' % AMO_API_BASE
-        req = super(AmoSession, self).request('get', login_url, allow_redirects=False)
+        req = super().request('get', login_url, allow_redirects=False)
 
         if req.status_code != 302:
             return False
 
-        urlparts = urlparse.urlparse(req.headers['Location'])
-        query = urlparse.parse_qs(urlparts.query)
+        urlparts = urllib.parse.urlparse(req.headers['Location'])
+        query = urllib.parse.parse_qs(urlparts.query)
         scope = query['scope'][0]
         client_id = query['client_id'][0]
         origin = 'https://' + urlparts.hostname
@@ -98,7 +96,6 @@ class AmoSession(requests.Session):
             }
 
             redirect_url = "%s/accounts/authenticate/" % AMO_API_BASE_V3
-            req = super(AmoSession, self).request('get', redirect_url,
-                                                  params=redirdata, allow_redirects=False)
+            req = super().request('get', redirect_url, params=redirdata, allow_redirects=False)
 
         return req.status_code == 302

@@ -3,17 +3,17 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 # Portions Copyright (C) Philipp Kewisch, 2015-2016
 
-from __future__ import print_function
-
 import sys
 import os
 import time
 
-from urlparse import urljoin
+from urllib.parse import urljoin
 from datetime import timedelta
 from tzlocal import get_localzone
 from dateutil import parser as dateparser
 from requests.exceptions import HTTPError
+
+import lxml.html
 
 from .admin import AdminInfo, AdminRedashInfo
 from .queue import QueueEntry
@@ -24,10 +24,9 @@ from .validation import ValidationReport
 from .utils import AMO_BASE, AMO_CONFIG, AMO_EDITOR_BASE, AMO_DEVELOPER_BASE, \
     AMO_TIMEZONE, VALIDATION_WAIT, UPLOAD_PLATFORM, csspath
 
-import lxml.html
 
 
-class AddonsService(object):
+class AddonsService:
     def __init__(self, login_prompter=None, cookiefile=None):
         self.session = AmoSession(self, login_prompter, cookiefile=cookiefile)
 
@@ -47,7 +46,8 @@ class AddonsService(object):
             admininfo.get()
         return admininfo
 
-    def get_user_addons(self, user):
+    @staticmethod
+    def get_user_addons(user):
         api_key = AMO_CONFIG.get('auth', 'redash_key', fallback=None)
         if not api_key:
             raise Exception("A redash API key is required in the config (auth.redash_key)")
@@ -55,7 +55,7 @@ class AddonsService(object):
         redash = AdminRedashInfo(api_key)
         return redash.get_user_addons(user)
 
-    def _unpaginate(self, url, func, params=None, limit=sys.maxint):
+    def _unpaginate(self, url, func, params=None, limit=sys.maxsize):
         things = []
         lastlen = -1
 
@@ -92,12 +92,12 @@ class AddonsService(object):
                 queue.append(QueueEntry(self.session, row))
 
             nextlink = doc.xpath(csspath('.data-grid-top > .pagination > li > a[rel="next"]'))
-            return nextlink[0].attrib['href'] if len(nextlink) else None
+            return nextlink[0].attrib['href'] if len(nextlink) > 0 else None
 
         url = '%s/%s' % (AMO_EDITOR_BASE, name)
         return self._unpaginate(url, page)
 
-    def get_logs(self, loglist, start=None, end=None, query=None, limit=sys.maxint):
+    def get_logs(self, loglist, start=None, end=None, query=None, limit=sys.maxsize):
         # pylint: disable=too-many-arguments
         payload = {
             'search': query
@@ -129,7 +129,7 @@ class AddonsService(object):
                     logs.append(entry)
 
             nextlink = doc.xpath(csspath('.pagination > li > a[rel="next"]'))
-            return nextlink[0].attrib['href'] if len(nextlink) else None
+            return nextlink[0].attrib['href'] if len(nextlink) > 0 else None
 
         url = '%s/%s' % (AMO_EDITOR_BASE, loglist)
         return self._unpaginate(url, page, params=payload, limit=limit)
@@ -189,7 +189,7 @@ class AddonsService(object):
 
             ver_exists = doc.xpath(csspath(".item_wrapper a") +
                                    "[contains(text(), 'Version %s')]" % report.version)
-            if len(ver_exists):
+            if len(ver_exists) > 0:
                 final_version_url = urljoin(AMO_DEVELOPER_BASE, ver_exists[0].attrib['href'])
                 add_version_url = final_version_url + "/submit-file/"
             else:
@@ -220,7 +220,7 @@ class AddonsService(object):
                                             "addon/%s/versions/%s" % (addonid, locparts[-2]))
 
             return final_version_url
-        except HTTPError, e:
+        except HTTPError as e:
             if e.response.status_code != 400:
                 raise e
             msg = None
@@ -228,7 +228,8 @@ class AddonsService(object):
                 msg = "Error: %s" % " ".join(e.response.json()['__all__'])
             except (ValueError, KeyError):
                 msg = ("Error: %s" % e.response.text)
-            raise Exception(msg)
+
+            raise Exception(msg) from e
         finally:
             if sourcefd:
                 sourcefd.close()

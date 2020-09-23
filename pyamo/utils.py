@@ -3,18 +3,16 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 # Portions Copyright (C) Philipp Kewisch, 2015-2016
 
-from __future__ import print_function
-
 import os
 import re
 import sys
-import requests
 import json
+import argparse
 
 from pytz import timezone
 from mozrunner import FirefoxRunner
 
-import argparse
+import requests
 import cssselect
 import fxa.core
 import fxa.oauth
@@ -68,7 +66,7 @@ ADDON_STATE = {
   "disabled": 5,
   "deleted": 11
 }
-REV_ADDON_STATE = {v: k for k, v in ADDON_STATE.items()}
+REV_ADDON_STATE = dict((v,k) for k,v in ADDON_STATE.items())
 
 ADDON_FILE_STATE = {
   "waiting": 1,
@@ -76,7 +74,7 @@ ADDON_FILE_STATE = {
   "disabled": 5,
   "beta": 7
 }
-REV_ADDON_FILE_STATE = {v: k for k, v in ADDON_FILE_STATE.items()}
+REV_ADDON_FILE_STATE = dict((v,k) for k,v in ADDON_FILE_STATE.items())
 
 
 def csspath(query):
@@ -86,11 +84,10 @@ def csspath(query):
 def flagstr(obj, name, altname=None):
     if name in obj and obj[name]:
         return "[%s]" % (altname or name)
-    else:
-        return ""
+    return ""
 
 
-class FXASession(object):
+class FXASession:
     # pylint: disable=too-few-public-methods
     def __init__(self, oauth_origin, scope, client_id, login_prompter):
         self.scope = scope
@@ -106,7 +103,7 @@ class FXASession(object):
 
         try:
             self.session = self.client.login(username, password)
-        except fxa.errors.ClientError, e:
+        except fxa.errors.ClientError as e:
             if e.error == "Request blocked":
                 self.client.send_unblock_code(username)
                 code = self.login_prompter(mode="unblock")
@@ -129,38 +126,38 @@ class FXASession(object):
         return self.oauth_client.authorize_code(self.session, self.scope, self.client_id)
 
 
-def requiresvpn(fn):
+def requiresvpn(func):
     def wrapper(*args, **kwargs):
         try:
-            return fn(*args, **kwargs)
+            return func(*args, **kwargs)
         except requests.exceptions.ConnectTimeout:
             print("Timed out. Are you connected to VPN?")
     return wrapper
 
 
-class AmoConfigParser(object):
-    def __init__(self, *args, **kwargs):
+class AmoConfigParser:
+    # pylint: disable=too-few-public-methods
+    def __init__(self):
         if sys.platform.startswith("win"):
             configfilepath = os.path.expanduser("~/amorc.json")
         else:
             configfilepath = os.path.expanduser("~/.amorc")
 
-        with open(configfilepath) as fp:
-            self.data = json.load(fp)
+        with open(configfilepath) as fd:
+            self.data = json.load(fd)
 
     def get(self, *args, **kwargs):
         try:
             data = self.data
-            while len(args):
+            while len(args) > 0:
                 data = data[args[0]]
                 args = args[1:]
 
             return data
-        except KeyError, e:
+        except KeyError as e:
             if "fallback" in kwargs:
                 return kwargs["fallback"]
-            else:
-                raise e
+            raise e
 
 
 # global config instance
@@ -221,33 +218,30 @@ def find_binary(name):
 
         # find the default executable from the windows registry
         try:
-            import _winreg
+            import winreg # pylint: disable=import-outside-toplevel
         except ImportError:
             pass
         else:
             sam_flags = [0]
-            # KEY_WOW64_32KEY etc only appeared in 2.6+, but that's OK as
-            # only 2.6+ has functioning 64bit builds.
-            if hasattr(_winreg, "KEY_WOW64_32KEY"):
-                if "64 bit" in sys.version:
-                    # a 64bit Python should also look in the 32bit registry
-                    sam_flags.append(_winreg.KEY_WOW64_32KEY)
-                else:
-                    # possibly a 32bit Python on 64bit Windows, so look in
-                    # the 64bit registry incase there is a 64bit app.
-                    sam_flags.append(_winreg.KEY_WOW64_64KEY)
+            if "64 bit" in sys.version:
+                # a 64bit Python should also look in the 32bit registry
+                sam_flags.append(winreg.KEY_WOW64_32KEY)
+            else:
+                # possibly a 32bit Python on 64bit Windows, so look in
+                # the 64bit registry incase there is a 64bit app.
+                sam_flags.append(winreg.KEY_WOW64_64KEY)
             for sam_flag in sam_flags:
                 try:
                     # assumes self.app_name is defined, as it should be for
                     # implementors
                     keyname = r"Software\Mozilla\Mozilla %s" % app_name
-                    sam = _winreg.KEY_READ | sam_flag
-                    app_key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, keyname, 0, sam)
-                    version, _ = _winreg.QueryValueEx(app_key, "CurrentVersion")
-                    version_key = _winreg.OpenKey(app_key, version + r"\Main")
-                    path, _ = _winreg.QueryValueEx(version_key, "PathToExe")
+                    sam = winreg.KEY_READ | sam_flag
+                    app_key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, keyname, 0, sam)
+                    version, _ = winreg.QueryValueEx(app_key, "CurrentVersion")
+                    version_key = winreg.OpenKey(app_key, version + r"\Main")
+                    path, _ = winreg.QueryValueEx(version_key, "PathToExe")
                     return path
-                except _winreg.error:
+                except winreg.error:
                     pass
 
         # search for the binary in the path

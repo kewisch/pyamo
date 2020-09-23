@@ -3,17 +3,15 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 # Portions Copyright (C) Philipp Kewisch, 2015-2016
 
-from __future__ import print_function
-
-from urlparse import urljoin
-from HTMLParser import HTMLParser
+from urllib.parse import urljoin
+from html.parser import HTMLParser
 from textwrap import TextWrapper
 from collections import defaultdict
 
 from .utils import flagstr, AMO_DEVELOPER_BASE
 
 
-class ValidationReport(object):
+class ValidationReport:
     # pylint: disable=too-many-instance-attributes
     def __init__(self, addonid, report, platform='all'):
         self.reportid = report['upload']

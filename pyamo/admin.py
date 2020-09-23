@@ -3,20 +3,19 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 # Portions Copyright (C) Philipp Kewisch, 2017
 
-from __future__ import print_function
-
-import sys
-import requests
 import time
+
+from urllib.parse import urljoin
+import lxml.html
+import requests
+
 
 from .utils import AMO_BASE, AMO_ADMIN_BASE, AMO_EDITOR_BASE, AMO_REVIEWERS_API_BASE, \
                    REV_ADDON_STATE, REV_ADDON_FILE_STATE, csspath
-import lxml.html
-
-from urlparse import urljoin
 
 
-class AdminUserInfoAddons(object):
+
+class AdminUserInfoAddons:
 
     def __init__(self, data):
         #  {u'addon_id': 922960,
@@ -35,17 +34,17 @@ class AdminUserInfoAddons(object):
             return (not status or elem['status::multi-filter'] == status) \
                and (not channel or elem['channel::multi-filter'] == channel)
 
-        self.data = filter(filterelem, self.data)
+        self.data = list(filter(filterelem, self.data))
         return self
 
     def __str__(self):
         return self.__unicode__().encode("utf8")
 
     def __unicode__(self):
-        return "\n".join([u'[{slugid: <32}] {name}'.format(**elem) for elem in self.data])
+        return "\n".join(['[{slugid: <32}] {name}'.format(**elem) for elem in self.data])
 
 
-class AdminRedashInfo(object):
+class AdminRedashInfo:
     # pylint: disable=too-few-public-methods
 
     USER_QUERY_ID = 49910  # the query for all addons for a user
@@ -90,7 +89,7 @@ class AdminRedashInfo(object):
         return AdminUserInfoAddons(data[1:])
 
 
-class AdminInfo(object):
+class AdminInfo:
     # pylint: disable=too-many-instance-attributes
 
     def __init__(self, parent, id_or_url):
@@ -107,6 +106,7 @@ class AdminInfo(object):
         self.addonstatus = -1
         self.page = 0
         self.status = None
+        self.token = None
 
         self.url = '%s/addon/manage/%s/' % (AMO_ADMIN_BASE, addonid)
 
@@ -141,7 +141,8 @@ class AdminInfo(object):
                 raise Exception("Invalid response")
 
             raise Exception(message[1].strip())
-        elif req.status_code == 301:
+
+        if req.status_code == 301:
             righturl = urljoin(self.url, req.headers["Location"])
             self.url = righturl[:righturl.find("?")]
             req = self.session.get(righturl, stream=True, allow_redirects=False)
@@ -227,7 +228,7 @@ class AdminInfo(object):
             raise Exception('Unknown versions: ' + ", ".join(versionset))
 
 
-class AdminFile(object):
+class AdminFile:
 
     def __init__(self, parent, row, headrow):
         self.parent = parent
@@ -255,12 +256,9 @@ class AdminFile(object):
         return self.originalstatus != self.status
 
     def __unicode__(self):
-        return u'%s (%s, id %s, %s) for %s: %s [%s]' % (
+        return '%s (%s, id %s, %s) for %s: %s [%s]' % (
             self.version.ljust(20), self.channel, self.fileid,
             self.date.rjust(14), self.platform.ljust(13),
             REV_ADDON_FILE_STATE.get(self.status, self.status).ljust(8),
             self.hash
         )
-
-    def __str__(self):
-        return unicode(self).encode(sys.stdout.encoding or 'ascii', 'replace')

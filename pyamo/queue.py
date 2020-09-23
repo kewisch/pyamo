@@ -5,12 +5,12 @@
 
 import sys
 
-from urlparse import urljoin
+from urllib.parse import urljoin
 
 from .utils import AMO_EDITOR_BASE
 
 
-class QueueEntry(object):
+class QueueEntry:
     # pylint: disable=too-few-public-methods,too-many-instance-attributes
 
     def __init__(self, session, row):
@@ -29,7 +29,7 @@ class QueueEntry(object):
         self.session = session
 
     def __unicode__(self):
-        return u'%s - %s %s [%s]' % (self.age.ljust(10), self.name, self.version, self.addonid)
+        return '%s - %s %s [%s]' % (self.age.ljust(10), self.name, self.version, self.addonid)
 
     def __str__(self):
-        return unicode(self).encode(sys.stdout.encoding, 'replace')
+        return str(self).encode(sys.stdout.encoding, 'replace')

@@ -5,8 +5,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 # Portions Copyright (C) Philipp Kewisch, 2015-2016
 
-from __future__ import print_function
-
 import os
 import shutil
 import sys
@@ -17,7 +15,7 @@ import getpass
 import logging
 import subprocess
 import tempfile
-import httplib
+import http.client
 
 from arghandler import subcmd, ArgumentHandler
 from .service import AddonsService
@@ -42,7 +40,7 @@ QUEUES = {
     'updates': 'queue/updates'
 }
 ALL_QUEUES = QUEUES.copy()
-ALL_QUEUES.update({v: v for v in QUEUES.values()})
+ALL_QUEUES.update({v: v for v in list(QUEUES.values())})
 DEFAULT_QUEUE = 'new'
 
 LOG_SORTKEYS = [
@@ -106,12 +104,12 @@ def cmd_admindisable(handler, amo, args):
         print("Will disable the following add-ons:\n")
         print(addoninfo)
         print("\nReady to go? (Ctrl+C to cancel)")
-        raw_input()
+        input()
 
         addons = addoninfo.get_ids()
     else:
         print("Will disable %d add-ons, ready to go? (Ctrl+C to cancel)" % len(args.addon))
-        raw_input()
+        input()
         addons = args.addon
 
     sys.stdout.write("Disabling...")
@@ -135,7 +133,7 @@ def cmd_admindisable(handler, amo, args):
 @subcmd('adminchange',
         help="Change the status of an add-ons and its files using the admin manage page")
 @requiresvpn
-def cmd_adminstatus(handler, amo, args):
+def cmd_adminstatus(handler, amo, args): # pylint: disable=too-many-branches,too-many-statements
     handler.add_argument('addon', help='the addon id or url to show info about')
     handler.add_argument('-s', '--status', default=None, help='set the add-on status')
     handler.add_argument('-a', '--approve', nargs='+', help='set these versions to approved')
@@ -154,8 +152,8 @@ def cmd_adminstatus(handler, amo, args):
             print("State change options not valid with -f")
             return
 
-        with open(args.file) as fp:
-            jsondata = json.loads(fp.read())
+        with open(args.file) as fd:
+            jsondata = json.loads(fd.read())
 
         statuschanged = (jsondata['status'] != admininfo.status)
 
@@ -224,9 +222,9 @@ def cmd_adminstatus(handler, amo, args):
         else:
             print("Keeping state for %s: %s" % (args.addon, REV_ADDON_STATE[admininfo.status]))
 
-        if len(disableset):
+        if len(disableset) > 0:
             print("Marking these versions disabled: " + ", ".join(disableset))
-        if len(approveset):
+        if len(approveset) > 0:
             print("Marking these versions approved: " + ", ".join(approveset))
 
     # Sanity Check
@@ -238,7 +236,7 @@ def cmd_adminstatus(handler, amo, args):
 
     if args.file:
         print("Last chance to bail out before changes are made (Ctrl+C to quit, enter to continue)")
-        raw_input()
+        input()
 
     admininfo.save()
     print("Done")
@@ -287,7 +285,7 @@ def cmd_list(handler, amo, args):
     handler.add_argument('-i', '--ids', action='store_true',
                          help='output add-on ids only')
     handler.add_argument('queue', nargs='?',
-                         choices=ALL_QUEUES.keys(),
+                         choices=list(ALL_QUEUES.keys()),
                          metavar="{" + ",".join(sorted(QUEUES.keys())) + "}",
                          default=DEFAULT_QUEUE,
                          help='the queue to list')
@@ -342,94 +340,97 @@ def cmd_get(handler, amo, args):
         args.profile = True
 
     for addon in args.addon:
-        if addon == '.':
-            addon = os.path.basename(os.getcwd())
-            if RE_VERSION.search(addon):
-                addon = os.path.basename(os.path.dirname(os.getcwd()))
+        cmd_get_single(amo, args, addon)
 
-        if len(args.addon) > 1:
-            print("Getting add-on %s" % addon)
+def cmd_get_single(amo, args, addon):
+    if addon == '.':
+        addon = os.path.basename(os.getcwd())
+        if RE_VERSION.search(addon):
+            addon = os.path.basename(os.path.dirname(os.getcwd()))
 
+    if len(args.addon) > 1:
+        print("Getting add-on %s" % addon)
+
+    review = amo.get_review(addon, args.unlisted)
+    if len(review.versions) == 0:
+        print("Warning: No listed versions, trying unlisted")
+        args.unlisted = True
         review = amo.get_review(addon, args.unlisted)
-        if len(review.versions) == 0:
-            print("Warning: No listed versions, trying unlisted")
-            args.unlisted = True
-            review = amo.get_review(addon, args.unlisted)
 
-        addonpath = os.path.join(args.outdir, review.slug)
+    addonpath = os.path.join(args.outdir, review.slug)
 
-        if os.path.exists(addonpath):
-            print("Warning: add-on directory already exists and may contain stale files")
-        else:
-            os.mkdir(addonpath)
+    if os.path.exists(addonpath):
+        print("Warning: add-on directory already exists and may contain stale files")
+    else:
+        os.mkdir(addonpath)
 
-        if os.path.abspath(args.outdir) != os.getcwd() or review.slug != addon:
-            print("Saving add-on to %s" % addonpath)
+    if os.path.abspath(args.outdir) != os.getcwd() or review.slug != addon:
+        print("Saving add-on to %s" % addonpath)
 
-        if args.diff:
-            args.version.extend(('previous', 'latest'))
+    if args.diff:
+        args.version.extend(('previous', 'latest'))
 
-        if args.version and len(args.version):
-            argversions = set()
-            argversionids = set()
-            for v in args.version:
-                if v.startswith("@"):
-                    argversionids.add(v[1:])
-                else:
-                    argversions.add(v)
+    if args.version and len(args.version) > 0:
+        argversions = set()
+        argversionids = set()
+        for version in args.version:
+            if version.startswith("@"):
+                argversionids.add(version[1:])
+            else:
+                argversions.add(version)
 
-            replace_version_tag(argversions, "latest", review.find_latest_version)
-            replace_version_tag(argversions, "latestwx", review.find_latest_version_wx)
+        replace_version_tag(argversions, "latest", review.find_latest_version)
+        replace_version_tag(argversions, "latestwx", review.find_latest_version_wx)
 
-            def find_versions(versions, page):
-                replace_version_tag(argversions,
-                                    "previous",
-                                    review.find_previous_version, quiet=True)
-                argmatch = [v for v in versions if v.version in argversions]
-                argidmatch = [v for v in versions if v.id in argversionids]
+        def find_versions(versions, page):
+            replace_version_tag(argversions,
+                                "previous",
+                                review.find_previous_version, quiet=True)
+            argmatch = [v for v in versions if v.version in argversions]
+            argidmatch = [v for v in versions if v.id in argversionids]
 
-                if len(argmatch) + len(argidmatch) == len(argversions) + len(argversionids):
-                    return argmatch + argidmatch
-                else:
-                    print("Warning: could not find all requested version on page",
-                          "%d, trying next page" % page)
-                    return False
+            if len(argmatch) + len(argidmatch) == len(argversions) + len(argversionids):
+                return argmatch + argidmatch
+            else:
+                print("Warning: could not find all requested version on page",
+                      "%d, trying next page" % page)
+                return False
 
-            versions = review.get_versions_until(find_versions, [])
+        versions = review.get_versions_until(find_versions, [])
 
-            if not len(versions):
-                print("Error: could not find version %s" % args.version)
-                return
+        if len(versions) == 0:
+            print("Error: could not find version %s" % args.version)
+            return
 
-        else:
-            review.get_versions_until(lambda versions, _: len(versions) >= args.limit)
-            versions = review.versions[-args.limit:]
+    else:
+        review.get_versions_until(lambda versions, _: len(versions) >= args.limit)
+        versions = review.versions[-args.limit:]
 
-        for version in versions:
-            platforms = ", ".join(version.apps)
-            print('Getting version %s %s [%s]' % (review.slug, version.version, platforms))
-            for fileobj in version.files:
-                fileplatforms = ", ".join(fileobj.platforms)
-                print('\tGetting file %s [%s]' % (fileobj.filename, fileplatforms))
-                fileobj.save(addonpath)
-                fileobj.extract(addonpath)
-                if args.profile:
-                    print('\tCreating profile [%s]' % fileplatforms)
-                    fileobj.createprofile(addonpath)
+    for version in versions:
+        platforms = ", ".join(version.apps)
+        print('Getting version %s %s [%s]' % (review.slug, version.version, platforms))
+        for fileobj in version.files:
+            fileplatforms = ", ".join(fileobj.platforms)
+            print('\tGetting file %s [%s]' % (fileobj.filename, fileplatforms))
+            fileobj.save(addonpath)
+            fileobj.extract(addonpath)
+            if args.profile:
+                print('\tCreating profile [%s]' % fileplatforms)
+                fileobj.createprofile(addonpath)
 
-            if version.sources:
-                sys.stdout.write('\tGetting sources')
+        if version.sources:
+            sys.stdout.write('\tGetting sources')
 
-                version.savesources(addonpath)
-                print(' ' + version.sourcefilename)
-                version.extractsources(addonpath)
-        if args.run:
-            print('Running applicaton for %s %s' % (review.slug, versions[-1].version))
-            if not args.binary:
-                print("Warning: you should be running unreviewed extensions in a VM for safety")
-                args.binary = find_binary("firefox")
+            version.savesources(addonpath)
+            print(' ' + version.sourcefilename)
+            version.extractsources(addonpath)
+    if args.run:
+        print('Running applicaton for %s %s' % (review.slug, versions[-1].version))
+        if not args.binary:
+            print("Warning: you should be running unreviewed extensions in a VM for safety")
+            args.binary = find_binary("firefox")
 
-            runprofile(args.binary, versions[-1].files[-1])
+        runprofile(args.binary, versions[-1].files[-1])
 
 
 @subcmd('run', help="Run an add-on in Firefox (preferably in a VM)")
@@ -475,7 +476,7 @@ def cmd_decide(handler, amo, args):
                          help='comment add to the review')
     handler.add_argument('-A', '--all', action='store_true',
                          help='apply to all versions, e.g. rejections')
-    handler.add_argument('-a', '--action', required=True, choices=DEFAULT_MESSAGE.keys(),
+    handler.add_argument('-a', '--action', required=True, choices=list(DEFAULT_MESSAGE.keys()),
                          help='the action to execute')
     handler.add_argument('-f', '--force', action='store_true',
                          help='Do not wait 3 seconds before executing the action')
@@ -533,7 +534,7 @@ def cmd_decide(handler, amo, args):
 
 @subcmd('logs', help="Show the review logs")
 def cmd_logs(handler, amo, args):
-    handler.add_argument('-l', '--limit', type=int, default=sys.maxint,
+    handler.add_argument('-l', '--limit', type=int, default=sys.maxsize,
                          help='maximum number of entries to retrieve')
     handler.add_argument('-s', '--start',
                          help='start time range (in local timezone')
@@ -638,16 +639,16 @@ def init_logging(level, _):
     requests_log.propagate = True
 
     if level == logging.DEBUG:
-        httplib.HTTPConnection.debuglevel = 1
+        http.client.HTTPConnection.debuglevel = 1
 
 
 def login_prompter_impl(mode="login"):
     if mode == "2fa":
-        return raw_input("2FA Code: ").strip()
+        return input("2FA Code: ").strip()
     elif mode == "unblock":
-        return raw_input("Unblock Code: ").strip()
+        return input("Unblock Code: ").strip()
     elif mode == "login":
-        username = raw_input("Username: ").strip()
+        username = input("Username: ").strip()
         password = getpass.getpass("Password: ").strip()
         return username, password
     else:

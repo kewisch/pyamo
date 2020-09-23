@@ -4,16 +4,18 @@
 # Portions Copyright (C) Philipp Kewisch, 2015
 
 import sys
-import urllib
+import urllib.request
+import urllib.parse
+import urllib.error
 
-from urlparse import urljoin
+from urllib.parse import urljoin
 from dateutil import parser as dateparser
 from tzlocal import get_localzone
 
 from .utils import AMO_EDITOR_BASE, AMO_TIMEZONE
 
 
-class LogEntry(object):
+class LogEntry:
     # pylint: disable=too-few-public-methods,too-many-instance-attributes
 
     def __init__(self, session, row):
@@ -24,7 +26,7 @@ class LogEntry(object):
 
         self.date = AMO_TIMEZONE.localize(dateparser.parse(dtcell.text))
         self.addonname = nameelem.text.strip()
-        self.addonid = urllib.unquote(actionelem.attrib['href'].split('/')[-1]).decode('utf8')
+        self.addonid = urllib.parse.unquote(actionelem.attrib['href'].split('/')[-1]).decode('utf8')
         self.url = urljoin(AMO_EDITOR_BASE, actionelem.attrib['href'])
         self.version = nameelem.tail.strip()
         self.reviewer = editorcell.text.strip()
@@ -33,10 +35,10 @@ class LogEntry(object):
 
     def __unicode__(self):
         localdt = self.date.astimezone(get_localzone()).strftime('%Y-%m-%d %I:%M:%S')
-        return u'%s %s %s %s %s %s' % (
+        return '%s %s %s %s %s %s' % (
             localdt, self.reviewer.ljust(20), self.action.ljust(25),
             self.addonid.ljust(30), self.addonname, self.version
         )
 
     def __str__(self):
-        return unicode(self).encode(sys.stdout.encoding or "utf-8", 'replace')
+        return str(self).encode(sys.stdout.encoding or "utf-8", 'replace')

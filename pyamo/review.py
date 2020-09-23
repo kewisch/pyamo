@@ -3,8 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 # Portions Copyright (C) Philipp Kewisch, 2015-2016
 
-from __future__ import print_function
-
 import os
 import re
 import cgi
@@ -13,17 +11,18 @@ import traceback
 import tarfile
 
 from zipfile import ZipFile, BadZipfile
-from urlparse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin
 from mozprofile import FirefoxProfile
-
-from .utils import AMO_BASE, AMO_EDITOR_BASE, AMO_REVIEWERS_API_BASE, csspath
-from .lzma import SevenZFile
 
 import lxml.html
 import magic
 
+from .utils import AMO_BASE, AMO_EDITOR_BASE, AMO_REVIEWERS_API_BASE, csspath
+from .lzma import SevenZFile
 
-class Review(object):
+
+
+class Review:
     # pylint: disable=too-few-public-methods,too-many-instance-attributes
 
     def __init__(self, parent, id_or_url, unlisted=False):
@@ -48,8 +47,15 @@ class Review(object):
             self.url = '%s/review-listed/%s' % (AMO_EDITOR_BASE, addonid)
         self.page = 0
 
+        self.versionmap = {}
+        self.adu = 0
+        self.downloads = 0
+        self.slug = None
+        self.api_token = None
+        self.enabledversions = []
+
     def find_latest_version(self):
-        if len(self.versions):
+        if len(self.versions) > 0:
             return self.versions[-1]
         else:
             return None
@@ -85,7 +91,8 @@ class Review(object):
                 raise Exception("Invalid response")
 
             raise Exception(message[1].strip())
-        elif req.status_code == 301:
+
+        if req.status_code == 301:
             target = urljoin(self.url, req.headers['location'])
             if target.startswith(AMO_EDITOR_BASE):
                 req = self.session.get(target, stream=True, allow_redirects=False)
@@ -99,8 +106,7 @@ class Review(object):
         self.addonname = namenodes[0].text.strip().replace("Review ", "", 1)
 
         self.token = doc.xpath(csspath('form input[name="csrfmiddlewaretoken"]'))[0].attrib['value']
-        self.enabledversions = map(lambda x: x.attrib['value'],
-                                   doc.xpath(csspath('#id_versions > option')))
+        self.enabledversions = [x.attrib['value'] for x in doc.xpath(csspath('#id_versions > option'))] # pylint: disable=line-too-long
         tokennodes = doc.xpath(csspath("#extra-review-actions"))
         self.api_token = tokennodes[0].attrib['data-api-token'] if tokennodes else None
 
@@ -118,7 +124,7 @@ class Review(object):
 
         downloadnodes = doc.xpath('//strong[@class="downloads"]')
         self.downloads = 0
-        if len(downloadnodes):
+        if len(downloadnodes) > 0:
             self.downloads = int(downloadnodes[0].text.replace(",", ""))
 
         self.adu = int(downloadnodes[1].text.replace(",", "")) if len(downloadnodes) > 1 else 0
@@ -126,7 +132,7 @@ class Review(object):
         first_page_path = ".review-files-paginate > .pagination > li > strong:first-of-type, " + \
             "#review-files-paginate > .pagination > li > strong:first-of-type"
         first_page_node = doc.xpath(csspath(first_page_path))
-        is_first_page = first_page_node[0].text == "1" if len(first_page_node) else True
+        is_first_page = first_page_node[0].text == "1" if len(first_page_node) > 0 else True
 
         if page > 1 and is_first_page:
             # We've gone over the last page, need to bail early
@@ -168,8 +174,10 @@ class Review(object):
     def get_enabled_version_numbers(self):
         return self.enabledversions
 
-    def decide(self, action, comments, versions=[], versionids=[]):
-        if len(versions):
+    def decide(self, action, comments, versions=None, versionids=None):
+        versionids = versionids or []
+        versions = versions or []
+        if len(versions) > 0:
             if action == 'reject_multiple_versions':
                 versionids = [v.id for v in versions if v.id]
             else:
@@ -199,7 +207,7 @@ class Review(object):
         return req.status_code == 202
 
 
-class AddonReviewVersion(object):
+class AddonReviewVersion:
     # pylint: disable=too-many-instance-attributes
 
     def __init__(self, parent, head, body):
@@ -218,8 +226,8 @@ class AddonReviewVersion(object):
         self._init_body(body)
 
     def _init_head(self, head):
-        args = head.iterchildren().next().text.encode('utf-8').strip().split(" ")
-        _, self.version, _, month, day, year = filter(None, args)  # pylint: disable=bad-builtin
+        args = next(head.iterchildren()).text.strip().split(" ")
+        _, self.version, _, month, day, year = [_f for _f in args if _f]
         self.date = '%s %s %s' % (month, day, year)
 
         lights = head.xpath(csspath("th .light"))
@@ -241,11 +249,11 @@ class AddonReviewVersion(object):
             self.id = codemgr[0].attrib['href'].split("/")[-2]
 
         sourcelink = body.xpath(csspath('.files > div > a[href]'))
-        if len(sourcelink):
+        if len(sourcelink) > 0:
             self.sources = urljoin(AMO_EDITOR_BASE, sourcelink[0].attrib['href'])
 
         appnodes = body.xpath(csspath('.files > ul > li > .app-icon'))
-        if len(appnodes):
+        if len(appnodes) > 0:
             appre = re.compile(r'ed-sprite-(\w+)')
             for node in appnodes:
                 matches = appre.search(node.attrib['class'])
@@ -270,7 +278,7 @@ class AddonReviewVersion(object):
             if not os.path.exists(sourcedir):
                 os.mkdir(sourcedir)
 
-            with open(self.sourcepath, 'w') as fd:
+            with open(self.sourcepath, 'wb') as fd:
                 for chunk in req.iter_content(chunksize):
                     fd.write(chunk)
 
@@ -308,7 +316,7 @@ class AddonReviewVersion(object):
             print("Could not extract sources due to above exception, skipping extraction")
 
 
-class AddonVersionFile(object):
+class AddonVersionFile:
     # pylint: disable=too-many-instance-attributes
 
     OS_LABEL_TO_SHORTNAME = {
@@ -330,7 +338,7 @@ class AddonVersionFile(object):
             for platform in infourl[0].text.split(" / ")
         ]
 
-        if len(set(("linux", "mac", "windows")) - set(self.platforms)) == 0:
+        if len({"linux", "mac", "windows"} - set(self.platforms)) == 0:
             # This is close enough to "all"
             self.platforms = ["all"]
 
@@ -338,7 +346,7 @@ class AddonVersionFile(object):
         self.status = statusdiv[0].text.strip()
 
         permnode = fileinfo.xpath(csspath(".file-permissions strong"))
-        self.permissions = permnode[0].tail.strip() if len(permnode) else None
+        self.permissions = permnode[0].tail.strip() if len(permnode) > 0 else None
 
         urlpath = urlparse(self.url).path
         urlpathparts = urlpath.split('/')
@@ -373,7 +381,7 @@ class AddonVersionFile(object):
 
         try:
             with ZipFile(self.savedpath, 'r') as zf:
-                zf.extractall(extractpath.decode("utf-8"))
+                zf.extractall(extractpath)
         except BadZipfile:
             print("Could not extract xpi, skipping")
 
