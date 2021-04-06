@@ -424,6 +424,9 @@ def cmd_get_single(amo, args, addon):
             version.savesources(addonpath)
             print(' ' + version.sourcefilename)
             version.extractsources(addonpath)
+
+        version.linklatest(addonpath)
+
     if args.run:
         print('Running applicaton for %s %s' % (review.slug, versions[-1].version))
         if not args.binary:

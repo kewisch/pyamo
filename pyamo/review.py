@@ -13,6 +13,7 @@ import tarfile
 from zipfile import ZipFile, BadZipfile
 from urllib.parse import urlparse, urljoin, unquote
 from mozprofile import FirefoxProfile
+from cmp_version import cmp_version
 
 import lxml.html
 import magic
@@ -314,6 +315,16 @@ class AddonReviewVersion:
             os.rmdir(extractpath)
             traceback.print_exc()
             print("Could not extract sources due to above exception, skipping extraction")
+
+    def linklatest(self, targetpath):
+        dst = os.path.join(targetpath, "latest")
+        if os.path.islink(dst):
+            target = os.path.dirname(os.readlink(dst))
+            if cmp_version(target, self.version) > 0:
+                return
+            os.unlink(dst)
+
+        os.symlink(self.version + os.path.sep, dst)
 
 
 class AddonVersionFile:

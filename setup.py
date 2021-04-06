@@ -23,6 +23,7 @@ setup(
         'lxml',
         'mozrunner',
         'cssselect',
+        'cmp_version',
         'arghandler >=1.0.3',
         'pylzma',
         'pytz',
