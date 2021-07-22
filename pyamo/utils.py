@@ -34,7 +34,7 @@ AMO_TIMEZONE = timezone("America/Los_Angeles")
 
 VALIDATION_WAIT = 5
 RE_VERSION = re.compile(r"""(?P<major>\d+|\*)      # major (x in x.y)
-                            \.?(?P<minor1>\d+|\*)? # minor1 (y in x.y)
+                            \.(?P<minor1>\d+|\*)? # minor1 (y in x.y)
                             \.?(?P<minor2>\d+|\*)? # minor2 (z in x.y.z)
                             \.?(?P<minor3>\d+|\*)? # minor3 (w in x.y.z.w)
                             (?P<alpha>[a|b]?)      # alpha/beta
