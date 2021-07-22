@@ -329,6 +329,8 @@ def cmd_get(handler, amo, args):
                          help='use the unlisted review page')
     handler.add_argument('-v', '--version', action='append', default=[],
                          help='pull a specific version. Prefix with @ to reference a version id.')
+    handler.add_argument('--symlinks', action="store_true",
+                         help='Create symlinks for convenience. Works best as a default.')
     handler.add_argument('addon', nargs='+',
                          help='the addon id or url to get')
 
@@ -358,11 +360,17 @@ def cmd_get_single(amo, args, addon):
         review = amo.get_review(addon, args.unlisted)
 
     addonpath = os.path.join(args.outdir, review.slug)
+    cmdpath = os.path.join(args.outdir, addon)
 
     if os.path.exists(addonpath):
         print("Warning: add-on directory already exists and may contain stale files")
     else:
         os.mkdir(addonpath)
+
+    # If you do `amo get {guid}` it will save the slug. If you have an alias that tries to cd into
+    # the passed directory, that fails. This symlink allows for both.
+    if args.symlinks and not os.path.exists(cmdpath) and review.slug != addon:
+        os.symlink(addonpath, cmdpath)
 
     if os.path.abspath(args.outdir) != os.getcwd() or review.slug != addon:
         print("Saving add-on to %s" % addonpath)
@@ -425,7 +433,8 @@ def cmd_get_single(amo, args, addon):
             print(' ' + version.sourcefilename)
             version.extractsources(addonpath)
 
-        version.linklatest(addonpath)
+        if args.symlinks:
+            version.linklatest(addonpath)
 
     if args.run:
         print('Running applicaton for %s %s' % (review.slug, versions[-1].version))
