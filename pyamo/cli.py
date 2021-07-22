@@ -481,13 +481,18 @@ def cmd_decide(handler, amo, args):
                          help='apply to all versions, e.g. rejections')
     handler.add_argument('-a', '--action', required=True, choices=list(DEFAULT_MESSAGE.keys()),
                          help='the action to execute')
+    handler.add_argument('-U', '--unlisted', action='store_true',
+                         help='assume ids are unlisted')
     handler.add_argument('-f', '--force', action='store_true',
                          help='Do not wait 3 seconds before executing the action')
     handler.add_argument('addon', nargs='*',
                          help='the addon id(s) or url(s) to decide about')
     args = parse_args_with_defaults(handler, 'decide', args)
 
-    if not args.message:
+
+    if args.message:
+        args.message = bytes(args.message, "utf-8").decode('unicode_escape')
+    else:
         editor = os.environ.get('EDITOR', 'vim')
 
         msgdir = tempfile.mkdtemp()
@@ -522,7 +527,7 @@ def cmd_decide(handler, amo, args):
         time.sleep(3)
 
     for addon in args.addon:
-        review = amo.get_review(addon.strip())
+        review = amo.get_review(addon.strip(), unlisted=args.unlisted)
         if args.action not in review.actions:
             actions = ",".join(review.actions)
             print("Error: Action not valid for reviewing %s (%s)" % (review.addonname, actions))
