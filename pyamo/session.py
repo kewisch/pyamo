@@ -28,7 +28,7 @@ class AmoSession(requests.Session):
                 with open(cookiefile) as fdr:
                     try:
                         self.cookies = requests.utils.cookiejar_from_dict(json.load(fdr))
-                    except Exception: # pylint: disable=broad-except
+                    except Exception:  # pylint: disable=broad-except
                         self.cookes = {}
             except IOError:
                 pass

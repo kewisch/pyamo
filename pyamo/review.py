@@ -22,7 +22,6 @@ from .utils import AMO_BASE, AMO_EDITOR_BASE, AMO_REVIEWERS_API_BASE, csspath
 from .lzma import SevenZFile
 
 
-
 class Review:
     # pylint: disable=too-few-public-methods,too-many-instance-attributes
 
@@ -107,12 +106,12 @@ class Review:
         self.addonname = namenodes[0].text.strip().replace("Review ", "", 1)
 
         self.token = doc.xpath(csspath('form input[name="csrfmiddlewaretoken"]'))[0].attrib['value']
-        self.enabledversions = [x.attrib['value'] for x in doc.xpath(csspath('#id_versions > option'))] # pylint: disable=line-too-long
+        self.enabledversions = [x.attrib['value'] for x in doc.xpath(csspath('#id_versions > option'))]  # pylint: disable=line-too-long
         tokennodes = doc.xpath(csspath("#extra-review-actions"))
         self.api_token = tokennodes[0].attrib['data-api-token'] if tokennodes else None
 
         self.addonid = doc.xpath(csspath('#addon'))[0].attrib['data-id']
-        self.slug = unquote(doc.xpath(csspath("#whiteboard_form"))[0].attrib['action'].split("/")[-1])
+        self.slug = unquote(doc.xpath(csspath("#whiteboard_form"))[0].attrib['action'].split("/")[-1])  # pylint: disable=line-too-long
 
         if self.unlisted:
             self.url = '%s/review-unlisted/%s' % (AMO_EDITOR_BASE, self.slug)

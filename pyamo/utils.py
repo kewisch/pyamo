@@ -66,7 +66,7 @@ ADDON_STATE = {
   "disabled": 5,
   "deleted": 11
 }
-REV_ADDON_STATE = dict((v,k) for k,v in ADDON_STATE.items())
+REV_ADDON_STATE = dict((v, k) for k, v in ADDON_STATE.items())
 
 ADDON_FILE_STATE = {
   "waiting": 1,
@@ -74,7 +74,7 @@ ADDON_FILE_STATE = {
   "disabled": 5,
   "beta": 7
 }
-REV_ADDON_FILE_STATE = dict((v,k) for k,v in ADDON_FILE_STATE.items())
+REV_ADDON_FILE_STATE = dict((v, k) for k, v in ADDON_FILE_STATE.items())
 
 
 def csspath(query):
@@ -218,7 +218,7 @@ def find_binary(name):
 
         # find the default executable from the windows registry
         try:
-            import winreg # pylint: disable=import-outside-toplevel
+            import winreg  # pylint: disable=import-outside-toplevel
         except ImportError:
             pass
         else:

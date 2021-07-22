@@ -25,7 +25,6 @@ from .utils import AMO_BASE, AMO_CONFIG, AMO_EDITOR_BASE, AMO_DEVELOPER_BASE, \
     AMO_TIMEZONE, VALIDATION_WAIT, UPLOAD_PLATFORM, csspath
 
 
-
 class AddonsService:
     def __init__(self, login_prompter=None, cookiefile=None):
         self.session = AmoSession(self, login_prompter, cookiefile=cookiefile)

@@ -133,7 +133,7 @@ def cmd_admindisable(handler, amo, args):
 @subcmd('adminchange',
         help="Change the status of an add-ons and its files using the admin manage page")
 @requiresvpn
-def cmd_adminstatus(handler, amo, args): # pylint: disable=too-many-branches,too-many-statements
+def cmd_adminstatus(handler, amo, args):  # pylint: disable=too-many-branches,too-many-statements
     handler.add_argument('addon', help='the addon id or url to show info about')
     handler.add_argument('-s', '--status', default=None, help='set the add-on status')
     handler.add_argument('-a', '--approve', nargs='+', help='set these versions to approved')
@@ -344,6 +344,7 @@ def cmd_get(handler, amo, args):
     for addon in args.addon:
         cmd_get_single(amo, args, addon)
 
+
 def cmd_get_single(amo, args, addon):
     if addon == '.':
         addon = os.path.basename(os.getcwd())
@@ -497,7 +498,6 @@ def cmd_decide(handler, amo, args):
     handler.add_argument('addon', nargs='*',
                          help='the addon id(s) or url(s) to decide about')
     args = parse_args_with_defaults(handler, 'decide', args)
-
 
     if args.message:
         args.message = bytes(args.message, "utf-8").decode('unicode_escape')

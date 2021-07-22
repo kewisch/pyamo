@@ -14,7 +14,6 @@ from .utils import AMO_BASE, AMO_ADMIN_BASE, AMO_EDITOR_BASE, AMO_REVIEWERS_API_
                    REV_ADDON_STATE, REV_ADDON_FILE_STATE, csspath
 
 
-
 class AdminUserInfoAddons:
 
     def __init__(self, data):
