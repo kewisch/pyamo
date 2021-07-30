@@ -315,8 +315,6 @@ def cmd_list(handler, amo, args):
 def cmd_get(handler, amo, args):
     handler.add_argument('-o', '--outdir', default=os.getcwd(),
                          help='output directory for add-ons')
-    handler.add_argument('-l', '--limit', type=int, default=1,
-                         help='number of versions to download')
     handler.add_argument('-d', '--diff', action='store_true',
                          help='shortcut for -v previous -v latest')
     handler.add_argument('-p', '--profile', action='store_true',
@@ -327,12 +325,18 @@ def cmd_get(handler, amo, args):
                          help='path to the binary to run, e.g. Firefox')
     handler.add_argument('-u', '--unlisted', action='store_true',
                          help='use the unlisted review page')
-    handler.add_argument('-v', '--version', action='append', default=[],
-                         help='pull a specific version. Prefix with @ to reference a version id.')
     handler.add_argument('--symlinks', action="store_true",
                          help='Create symlinks for convenience. Works best as a default.')
     handler.add_argument('addon', nargs='+',
                          help='the addon id or url to get')
+
+    versiongroup = handler.add_mutually_exclusive_group()
+    versiongroup.add_argument('-l', '--limit', type=int, default=1,
+                              help='number of versions to download')
+    versiongroup.add_argument('-v', '--version', action='append', default=[],
+                              help='pull a specific version. Prefix with @ to reference a version id.')
+    versiongroup.add_argument('-a', '--all-versions', action='store_true', dest="allversions",
+                              help='pull all versions')
 
     args = parse_args_with_defaults(handler, 'get', args)
 
@@ -379,7 +383,11 @@ def cmd_get_single(amo, args, addon):
     if args.diff:
         args.version.extend(('previous', 'latest'))
 
-    if args.version and len(args.version) > 0:
+    if args.allversions:
+        versions = review.get_all_versions()
+        if len(versions) >= 0:
+            print("Retrieving %d versions" % len(versions))
+    elif args.version and len(args.version) > 0:
         argversions = set()
         argversionids = set()
         for version in args.version:
@@ -406,14 +414,13 @@ def cmd_get_single(amo, args, addon):
                 return False
 
         versions = review.get_versions_until(find_versions, [])
-
-        if len(versions) == 0:
-            print("Error: could not find version %s" % args.version)
-            return
-
     else:
         review.get_versions_until(lambda versions, _: len(versions) >= args.limit)
         versions = review.versions[-args.limit:]
+
+    if len(versions) == 0:
+        print("Error: no requested versions found")
+        return
 
     for version in versions:
         platforms = ", ".join(version.apps)

@@ -159,6 +159,7 @@ class Review:
         incomplete = True
         while incomplete:
             incomplete = self.get_next_page()
+        return self.versions
 
     def get_versions_until(self, func, default=None):
         res = default
