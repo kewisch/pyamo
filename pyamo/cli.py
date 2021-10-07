@@ -502,6 +502,8 @@ def cmd_decide(handler, amo, args):
                          help='assume ids are unlisted')
     handler.add_argument('-f', '--force', action='store_true',
                          help='Do not wait 3 seconds before executing the action')
+    handler.add_argument('--undelay', action='store_true',
+                         help='Remove auto-approval extra delay')
     handler.add_argument('addon', nargs='*',
                          help='the addon id(s) or url(s) to decide about')
     args = parse_args_with_defaults(handler, 'decide', args)
@@ -542,6 +544,8 @@ def cmd_decide(handler, amo, args):
             print("Will give %s review to %s in 3 seconds" % (args.action, args.addon[0]))
         time.sleep(3)
 
+    failures = []
+
     for addon in args.addon:
         review = amo.get_review(addon.strip(), unlisted=args.unlisted)
         if args.action not in review.actions:
@@ -550,10 +554,21 @@ def cmd_decide(handler, amo, args):
             continue
 
         versions = review.versions if args.all else [review.versions[-1]]
-        review.decide(args.action, args.message, versions)
+        success = review.decide(args.action, args.message, versions)
+
+        if not success:
+            failures.append(addon)
+        elif args.undelay:
+            success = review.remove_extra_delay()
+            if not success:
+                failures.append(addon)
+
         print("%s completed" % addon)
 
-    print("Done")
+    if len(failures) > 0:
+        print("The following add-ons failed:\n\t" + "\n\t".join(failures))
+    else:
+        print("Done")
 
 
 @subcmd('logs', help="Show the review logs")

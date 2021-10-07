@@ -207,6 +207,13 @@ class Review:
         req = self.session.post(url, headers=headers, allow_redirects=False)
         return req.status_code == 202
 
+    def remove_extra_delay(self):
+        url = AMO_REVIEWERS_API_BASE + '/addon/%s/flags/' % self.addonid
+        headers = {'Authorization': 'Bearer ' + self.api_token}
+        postdata = {'auto_approval_delayed_until': None}
+        req = self.session.patch(url, json=postdata, headers=headers, allow_redirects=False)
+        return req.status_code == 200 and req.json()['auto_approval_delayed_until'] is None
+
 
 class AddonReviewVersion:
     # pylint: disable=too-many-instance-attributes
