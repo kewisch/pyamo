@@ -9,7 +9,7 @@ import json
 import urllib.parse
 import requests
 
-from .utils import AMO_API_BASE, AMO_API_BASE_V3, AMO_ADMIN_BASE, FXASession
+from .utils import AMO_API_BASE, AMO_API_AUTH, AMO_ADMIN_BASE, FXASession
 
 
 class AmoSession(requests.Session):
@@ -95,7 +95,7 @@ class AmoSession(requests.Session):
                 'action': 'signin'
             }
 
-            redirect_url = "%s/accounts/authenticate/" % AMO_API_BASE_V3
+            redirect_url = "%s/authenticate-callback/" % AMO_API_AUTH
             req = super().request('get', redirect_url, params=redirdata, allow_redirects=False)
 
         return req.status_code == 302
