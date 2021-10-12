@@ -106,12 +106,16 @@ class Review:
         self.addonname = namenodes[0].text.strip().replace("Review ", "", 1)
 
         self.token = doc.xpath(csspath('form input[name="csrfmiddlewaretoken"]'))[0].attrib['value']
-        self.enabledversions = [x.attrib['value'] for x in doc.xpath(csspath('#id_versions > option'))]  # pylint: disable=line-too-long
+        self.enabledversions = [
+          x.attrib['value'] for x in doc.xpath(csspath('#id_versions > option'))
+        ]
         tokennodes = doc.xpath(csspath("#extra-review-actions"))
         self.api_token = tokennodes[0].attrib['data-api-token'] if tokennodes else None
 
         self.addonid = doc.xpath(csspath('#addon'))[0].attrib['data-id']
-        self.slug = unquote(doc.xpath(csspath("#whiteboard_form"))[0].attrib['action'].split("/")[-1])  # pylint: disable=line-too-long
+        self.slug = unquote(
+          doc.xpath(csspath("#whiteboard_form"))[0].attrib['action'].split("/")[-1]
+        )
 
         if self.unlisted:
             self.url = '%s/review-unlisted/%s' % (AMO_EDITOR_BASE, self.slug)
@@ -201,6 +205,15 @@ class Review:
         req = self.session.post(self.url, data=postdata, headers=headers)
         return req.status_code == 200
 
+    def flags(self, flags=None):
+        url = AMO_REVIEWERS_API_BASE + '/addon/%s/flags/' % self.addonid
+        headers = {'Authorization': 'Bearer ' + self.api_token}
+        req = self.session.patch(url, json=flags or {}, headers=headers, allow_redirects=False)
+        print(req.json())
+        if not req.status_code == 200:
+            raise Exception("Request error %d" % req.status_code)
+        return req.json()
+
     def admin_disable(self):
         url = AMO_REVIEWERS_API_BASE + '/addon/%s/disable/' % self.addonid
         headers = {'Authorization': 'Bearer ' + self.api_token}
@@ -208,11 +221,15 @@ class Review:
         return req.status_code == 202
 
     def remove_extra_delay(self):
-        url = AMO_REVIEWERS_API_BASE + '/addon/%s/flags/' % self.addonid
-        headers = {'Authorization': 'Bearer ' + self.api_token}
-        postdata = {'auto_approval_delayed_until': None}
-        req = self.session.patch(url, json=postdata, headers=headers, allow_redirects=False)
-        return req.status_code == 200 and req.json()['auto_approval_delayed_until'] is None
+        flags = self.flags({"auto_approval_delayed_until": None})
+        return flags["auto_approval_delayed_until"] is None
+
+    def set_next_autoapproval(self, value=True):
+        key = "auto_approval_disabled_until_next_approval"
+        if self.unlisted:
+            key += "_unlisted"
+        flags = self.flags({key: None})
+        return flags[key] == value
 
 
 class AddonReviewVersion:

@@ -19,7 +19,7 @@ import http.client
 
 from arghandler import subcmd, ArgumentHandler
 from .service import AddonsService
-from .utils import find_binary, runprofile, parse_args_with_defaults, \
+from .utils import find_binary, runprofile, parse_args_with_defaults, ValidateFlags, \
                    requiresvpn, RE_VERSION, RE_VERSION_BETA, ADDON_STATE, ADDON_FILE_STATE, \
                    REV_ADDON_STATE, REV_ADDON_FILE_STATE
 
@@ -48,6 +48,33 @@ LOG_SORTKEYS = [
 ]
 
 REVIEW_LOGS = ['reviewlog']
+
+
+@subcmd('flags', help="Shows and sets flags for an add-on")
+def cmd_debugtest(handler, amo, args):
+    handler.add_argument('-s' '--set', dest='flags', nargs=2,
+                         action=ValidateFlags, metavar=('FLAG', 'VALUE'),
+                         help='flag(s) to set')
+    handler.add_argument('addon', nargs='*', help='the addon to get or set flags for')
+    args = handler.parse_args(args)
+
+    def mapvalue(val):
+        if val is None:
+            return "null"
+        elif val is True:
+            return "true"
+        elif val is False:
+            return "false"
+        else:
+            return val
+
+    for addon in args.addon:
+        review = amo.get_review(addon)
+        flags = review.flags(args.flags or {})
+        print("{} ({}, {} users)".format(addon, review.addonname, review.adu))
+        if len(flags.keys()) > 0:
+            print("\t" + "\n\t".join("{} = {}".format(key, mapvalue(value))
+                                     for key, value in flags.items()))
 
 
 @subcmd('adminget', help="Show admin manage information about an add-on")
@@ -334,7 +361,8 @@ def cmd_get(handler, amo, args):
     versiongroup.add_argument('-l', '--limit', type=int, default=1,
                               help='number of versions to download')
     versiongroup.add_argument('-v', '--version', action='append', default=[],
-                              help='pull a specific version. Prefix with @ to reference a version id.')
+                              help='pull a specific version. ' +
+                                   'Prefix with @ to reference a version id.')
     versiongroup.add_argument('-a', '--all-versions', action='store_true', dest="allversions",
                               help='pull all versions')
 
@@ -498,6 +526,8 @@ def cmd_decide(handler, amo, args):
                          help='apply to all versions, e.g. rejections')
     handler.add_argument('-a', '--action', required=True, choices=list(DEFAULT_MESSAGE.keys()),
                          help='the action to execute')
+    handler.add_argument('--versionids',
+                         help='comma separaed list of versions, e.g. for reject_multiple_versions')
     handler.add_argument('-U', '--unlisted', action='store_true',
                          help='assume ids are unlisted')
     handler.add_argument('-f', '--force', action='store_true',
@@ -508,7 +538,10 @@ def cmd_decide(handler, amo, args):
                          help='the addon id(s) or url(s) to decide about')
     args = parse_args_with_defaults(handler, 'decide', args)
 
-    if args.message:
+    if args.message and args.message[0] == "@":
+        with open(args.message[1:], "r") as fd:
+            args.message = fd.read()
+    elif args.message:
         args.message = bytes(args.message, "utf-8").decode('unicode_escape')
     else:
         editor = os.environ.get('EDITOR', 'vim')
@@ -539,7 +572,8 @@ def cmd_decide(handler, amo, args):
 
     if not args.force:
         if len(args.addon) > 1:
-            print("Will give %s review to %d add-ons in 3 seconds" % (args.action, len(args.addon)))
+            print("Will give %s review to %d add-ons with in 3 seconds" %
+                  (args.action, len(args.addon)))
         else:
             print("Will give %s review to %s in 3 seconds" % (args.action, args.addon[0]))
         time.sleep(3)
@@ -553,8 +587,13 @@ def cmd_decide(handler, amo, args):
             print("Error: Action not valid for reviewing %s (%s)" % (review.addonname, actions))
             continue
 
-        versions = review.versions if args.all else [review.versions[-1]]
-        success = review.decide(args.action, args.message, versions)
+        if args.all:
+            success = review.decide(args.action, args.message, review.versions)
+        elif args.versionids:
+            versionids = args.versionids.split(",")
+            success = review.decide(args.action, args.message, versionids=versionids)
+        else:
+            success = review.decide(args.action, args.message, [review.versions[-1]])
 
         if not success:
             failures.append(addon)

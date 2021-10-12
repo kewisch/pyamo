@@ -77,6 +77,42 @@ ADDON_FILE_STATE = {
 REV_ADDON_FILE_STATE = dict((v, k) for k, v in ADDON_FILE_STATE.items())
 
 
+def flag_boolean(string):
+    if string.lower() in ("true", "false"):
+        return string.lower() == "true"
+    else:
+        raise ValueError("Invalid boolean: " + string)
+
+
+def flag_date_none(string):
+    if string.lower() == "null":
+        return None
+    else:
+        return string
+
+
+FLAGS = {
+  "auto_approval_disabled": flag_boolean,
+  "auto_approval_disabled_until_next_approval": flag_boolean,
+  "auto_approval_delayed_until": flag_date_none,
+  "needs_admin_code_review": flag_boolean,
+  "needs_admin_content_review": flag_boolean,
+  "needs_admin_theme_review": flag_boolean,
+  "auto_approval_disabled_until_next_approval_unlisted": flag_boolean
+}
+
+
+class ValidateFlags(argparse.Action):
+    def __call__(self, parser, args, values, option_string=None):
+        key, value = values
+        if key not in FLAGS.keys():
+            raise ValueError("invalid flag: %s" % key)
+
+        vals = getattr(args, self.dest) or {}
+        vals[key] = FLAGS[key](value)
+        setattr(args, self.dest, vals)
+
+
 def csspath(query):
     return cssselect.HTMLTranslator().css_to_xpath(query)
 
