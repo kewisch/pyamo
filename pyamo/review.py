@@ -231,6 +231,16 @@ class Review:
         flags = self.flags({key: None})
         return flags[key] == value
 
+    def subscription(self, subscribe=True):
+        url = AMO_REVIEWERS_API_BASE + '/addon/{}/{}subscribe_{}listed/'.format(
+            self.addonid,
+            "un" if not subscribe else "",
+            "un" if self.unlisted else ""
+        )
+        headers = {'Authorization': 'Bearer ' + self.api_token}
+        req = self.session.post(url, headers=headers, allow_redirects=False)
+        return req.status_code == 202
+
 
 class AddonReviewVersion:
     # pylint: disable=too-many-instance-attributes

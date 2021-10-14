@@ -77,6 +77,44 @@ def cmd_debugtest(handler, amo, args):
                                      for key, value in flags.items()))
 
 
+@subcmd('unsubscribe', help="Unsubscribe to updates for an add-on")
+def cmd_unsubscribe(handler, amo, args):
+    handlesubscription(handler, amo, args, False)
+
+
+@subcmd('subscribe', help="Subscribe to updates for an add-on")
+def cmd_subscribe(handler, amo, args):
+    handlesubscription(handler, amo, args, True)
+
+
+def handlesubscription(handler, amo, args, subscribe):
+    subscribestring = "" if subscribe else "un"
+    handler.add_argument('-u', '--unlisted', action='store_true',
+                         help='{}subscribe to unlisted updates'.format(subscribestring))
+    handler.add_argument('addon', nargs='*',
+                         help='the addon to {}subscribe to'.format(subscribestring))
+    args = handler.parse_args(args)
+
+    for addon in args.addon:
+        review = amo.get_review(addon, unlisted=args.unlisted)
+        if review.subscription(subscribe):
+            print(
+                "{} {} for {} updates".format(
+                    "subscribed to" if subscribe else "unsubscribed from",
+                    addon,
+                    "unlisted" if args.unlisted else "listed"
+                )
+            )
+        else:
+            print(
+                "error {} {} for {} updates".format(
+                    "subscribing to" if subscribe else "unsubscribing from",
+                    addon,
+                    "unlisted" if args.unlisted else "listed"
+                )
+            )
+
+
 @subcmd('adminget', help="Show admin manage information about an add-on")
 @requiresvpn
 def cmd_admin(handler, amo, args):
