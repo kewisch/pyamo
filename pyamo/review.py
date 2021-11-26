@@ -113,9 +113,8 @@ class Review:
         self.api_token = tokennodes[0].attrib['data-api-token'] if tokennodes else None
 
         self.addonid = doc.xpath(csspath('#addon'))[0].attrib['data-id']
-        self.slug = unquote(
-          doc.xpath(csspath("#whiteboard_form"))[0].attrib['action'].split("/")[-1]
-        )
+        slugnodes = doc.xpath(csspath(".file-info > .light > a:not([title])"))
+        self.slug = unquote(slugnodes[0].attrib['href'].split("/")[-4])
 
         if self.unlisted:
             self.url = '%s/review-unlisted/%s' % (AMO_EDITOR_BASE, self.slug)
