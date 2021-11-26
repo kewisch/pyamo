@@ -3,7 +3,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-# Portions Copyright (C) Philipp Kewisch, 2015-2016
+# Portions Copyright (C) Philipp Kewisch, 2015
 
 import os
 import shutil
@@ -390,6 +390,8 @@ def cmd_get(handler, amo, args):
                          help='path to the binary to run, e.g. Firefox')
     handler.add_argument('-u', '--unlisted', action='store_true',
                          help='use the unlisted review page')
+    handler.add_argument('-U', '--user',
+                         help='Download all add-ons from a user')
     handler.add_argument('--symlinks', action="store_true",
                          help='Create symlinks for convenience. Works best as a default.')
     handler.add_argument('addon', nargs='+',
@@ -410,6 +412,9 @@ def cmd_get(handler, amo, args):
 
     if args.run:
         args.profile = True
+
+    if args.user:
+        pass
 
     for addon in args.addon:
         cmd_get_single(amo, args, addon)
