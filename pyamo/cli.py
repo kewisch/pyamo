@@ -19,7 +19,7 @@ import http.client
 
 from arghandler import subcmd, ArgumentHandler
 from .service import AddonsService
-from .utils import find_binary, runprofile, parse_args_with_defaults, ValidateFlags, \
+from .utils import find_binary, runprofile, handler_defaults, ValidateFlags, \
                    requiresvpn, RE_VERSION, RE_VERSION_BETA, ADDON_STATE, ADDON_FILE_STATE, \
                    REV_ADDON_STATE, REV_ADDON_FILE_STATE
 
@@ -354,7 +354,7 @@ def cmd_list(handler, amo, args):
                          metavar="{" + ",".join(sorted(QUEUES.keys())) + "}",
                          default=DEFAULT_QUEUE,
                          help='the queue to list')
-    args = parse_args_with_defaults(handler, 'list', args)
+    args = handler_defaults(handler, 'list').parse_args(args)
 
     if args.url and args.ids:
         print("Error: can't specify both ids and urls for display")
@@ -406,7 +406,7 @@ def cmd_get(handler, amo, args):
     versiongroup.add_argument('-a', '--all-versions', action='store_true', dest="allversions",
                               help='pull all versions')
 
-    args = parse_args_with_defaults(handler, 'get', args)
+    args = handler_defaults(handler, 'get').parse_args(args)
 
     args.outdir = os.path.expanduser(args.outdir)
 
@@ -534,7 +534,7 @@ def cmd_run(handler, amo, args):
                          help='path to the binary to run, e.g. Firefox')
     handler.add_argument('addon', help='the addon id to run')
     handler.add_argument('version', help='the addon version to run')
-    args = parse_args_with_defaults(handler, 'run', args)
+    args = handler_defaults(handler, 'run').parse_args(args)
 
     args.outdir = os.path.expanduser(args.outdir)
     if os.path.abspath(os.path.expanduser(args.outdir)) != os.getcwd():
@@ -579,7 +579,7 @@ def cmd_decide(handler, amo, args):
                          help='Remove auto-approval extra delay')
     handler.add_argument('addon', nargs='*',
                          help='the addon id(s) or url(s) to decide about')
-    args = parse_args_with_defaults(handler, 'decide', args)
+    args = handler_defaults(handler, 'decide').parse_args(args)
 
     if args.message and args.message[0] == "@":
         with open(args.message[1:], "r") as fd:
@@ -671,7 +671,7 @@ def cmd_logs(handler, amo, args):
                          help='output add-on ids only')
     handler.add_argument('logs', nargs='?', default=REVIEW_LOGS[0], choices=REVIEW_LOGS,
                          help='the type of logs to retrieve')
-    args = parse_args_with_defaults(handler, 'logs', args)
+    args = handler_defaults(handler, 'logs').parse_args(args)
 
     if args.url and args.ids:
         print("Error: can't specify both ids and urls for display")
@@ -705,7 +705,7 @@ def cmd_upload(handler, amo, args):
                          help='add sources to this submission')
     handler.add_argument('addon',
                          help='the addon id to upload')
-    args = parse_args_with_defaults(handler, 'upload', args)
+    args = handler_defaults(handler, 'upload').parse_args(args)
 
     for platform, xpi in args.xpi:
         print("Uploading %s for platform %s" % (xpi, platform))
@@ -781,17 +781,27 @@ def main():
     cookiedefault = os.path.expanduser('~/.amo_cookie')
 
     def load_context(args):
-        amo.session.load(args.cookies)
+        if args.profile:
+            amo.session.load_firefox_cookies(args.profile)
+        else:
+            amo.session.load(args.cookies)
+
         amo.session.timeout = args.timeout
         return amo
 
     handler = ArgumentHandler(use_subcommand_help=True)
-    handler.add_argument('-c', '--cookies', default=cookiedefault,
-                         help='the file to save the session cookies to')
+    cookiegroup = handler.add_mutually_exclusive_group()
+    cookiegroup.add_argument('-P', '--profile', default=None,
+                             help='The Firefox profile to use cookies from')
+    cookiegroup.add_argument('-c', '--cookies', default=cookiedefault,
+                             help='the file to save the session cookies to')
+
     handler.add_argument('--timeout', type=int, default=None,
                          help='timeout for http requests')
     handler.set_logging_argument('-d', '--debug', default_level=logging.WARNING,
                                  config_fxn=init_logging)
+
+    handler = handler_defaults(handler, "global")
 
     try:
         handler.run(sys.argv[1:], context_fxn=load_context)

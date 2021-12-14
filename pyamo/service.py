@@ -26,8 +26,8 @@ from .utils import AMO_BASE, AMO_CONFIG, AMO_EDITOR_BASE, AMO_DEVELOPER_BASE, \
 
 
 class AddonsService:
-    def __init__(self, login_prompter=None, cookiefile=None):
-        self.session = AmoSession(self, login_prompter, cookiefile=cookiefile)
+    def __init__(self, login_prompter=None):
+        self.session = AmoSession(self, login_prompter)
 
     def persist(self):
         self.session.persist()

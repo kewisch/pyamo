@@ -39,6 +39,7 @@ examples:
     }
   }
 }
+```
 
 It is highly recommended to set a the `--outdir` argument as default, to make
 sure all add-ons end up in the same folder.
@@ -50,6 +51,19 @@ admin commands.
 {
   "auth": {
     "redash_key": "42c85d86fd212538f4394f47c80fa62c"
+  }
+}
+```
+
+To set default global arguments (e.g. `timeout`, `cookies`, `profile`), use the `global` key in pyamo defaults.
+For example, you may want to always use a Firefox profile for authentictaion:
+
+```json
+{
+  "pyamo": {
+    "defaults": {
+      "global": "-P 78bfnff3.default"
+    }
   }
 }
 ```

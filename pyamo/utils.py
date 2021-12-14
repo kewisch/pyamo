@@ -8,6 +8,7 @@ import re
 import sys
 import json
 import argparse
+import pathlib
 
 from pytz import timezone
 from mozrunner import FirefoxRunner
@@ -200,13 +201,13 @@ class AmoConfigParser:
 AMO_CONFIG = AmoConfigParser()
 
 
-def parse_args_with_defaults(handler, cmd, args):
+def handler_defaults(handler, cmd):
     # Read the defaults from the config file, if it does not exist just parse
     # options as usual.
     try:
         defaults = AMO_CONFIG.get('pyamo', 'defaults', cmd).split(" ")
     except KeyError:
-        return handler.parse_args(args)
+        return handler
 
     # Create an argument parser that takes just the options, but no defaults or
     # requirements.  Setting the kwargs is a bit fragile, but since we can't
@@ -226,7 +227,7 @@ def parse_args_with_defaults(handler, cmd, args):
     # defaults for the real handler.
     defargs = defhandler.parse_args(defaults)
     handler.set_defaults(**vars(defargs))
-    return handler.parse_args(args)
+    return handler
 
 
 def find_in_path(filename, path=os.environ['PATH']):
@@ -238,6 +239,21 @@ def find_in_path(filename, path=os.environ['PATH']):
             if os.path.isfile(os.path.join(dirname, filename + ".exe")):
                 return os.path.join(dirname, filename + ".exe")
     return None
+
+
+def fxprofile(profile):
+    home = pathlib.Path.home()
+
+    if sys.platform == "win32":
+        path = home / "AppData/Roaming/Firefox/Profiles"
+    elif sys.platform.startswith("linux"):
+        path = home / ".mozilla/firefox"
+    elif sys.platform == "darwin":
+        path = home / "Library/Application Support/Firefox/Profiles"
+    else:
+        raise Exception("Unknown platform " + sys.platform)
+
+    return path / profile
 
 
 # pylint: disable=too-many-locals,too-many-branches

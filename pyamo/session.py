@@ -7,31 +7,61 @@ import os
 import json
 
 import urllib.parse
+import sqlite3
+import http
+import shutil
+import webbrowser
+import tempfile
+
 import requests
 
-from .utils import AMO_API_BASE, AMO_API_AUTH, AMO_ADMIN_BASE, FXASession
+from .utils import AMO_API_BASE, AMO_API_AUTH, AMO_ADMIN_BASE, FXASession, fxprofile
 
 
 class AmoSession(requests.Session):
-    def __init__(self, service, login_prompter, *args, cookiefile=None, **kwargs):
+    def __init__(self, service, login_prompter, *args, **kwargs):
         self.service = service
         self.login_prompter = login_prompter
         self.loginfail = 0
         self.timeout = None
+        self.cookiefile = None
+        self.firefox_cookies_profile = None
         super().__init__(*args, **kwargs)
-        self.load(cookiefile)
+
+    def load_firefox_cookies(self, profile):
+        self.cookiefile = None
+        self.firefox_cookies_profile = profile
+        self.cookies = http.cookiejar.CookieJar()
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            tempsql = os.path.join(tempdir, "cookies.sqlite")
+            shutil.copyfile(fxprofile(self.firefox_cookies_profile) / "cookies.sqlite", tempsql)
+            conn = sqlite3.connect(tempsql)
+            cursor = conn.cursor()
+            cursor.execute("SELECT host, path, isSecure, expiry, name, value FROM moz_cookies")
+            for item in cursor.fetchall():
+                domain_spec = item[0].startswith('.')
+                cookie = http.cookiejar.Cookie(0, item[4], item[5],
+                                               None, False,
+                                               item[0], domain_spec, domain_spec,
+                                               item[1], False,
+                                               item[2],
+                                               item[3], item[3] == "",
+                                               None, None, {})
+                self.cookies.set_cookie(cookie)
+            conn.close()
 
     def load(self, cookiefile):
+        self.firefox_cookies_profile = None
         self.cookiefile = cookiefile
-        if self.cookiefile:
-            try:
-                with open(cookiefile) as fdr:
-                    try:
-                        self.cookies = requests.utils.cookiejar_from_dict(json.load(fdr))
-                    except Exception:  # pylint: disable=broad-except
-                        self.cookes = {}
-            except IOError:
-                pass
+        try:
+            with open(cookiefile) as fdr:
+                try:
+                    self.cookies = requests.utils.cookiejar_from_dict(json.load(fdr))
+                except Exception:  # pylint: disable=broad-except
+                    self.cookies = {}
+        except IOError:
+            pass
 
     def persist(self):
         if self.cookiefile:
@@ -67,14 +97,21 @@ class AmoSession(requests.Session):
 
             print("Incorrect user/password or session expired")
 
+            self.cookies.clear()
             loginsuccess = self.login()
 
         return not islogin
 
     def login(self):
-        self.cookies.clear_expired_cookies()
-
         login_url = '%s/accounts/login/start/?config=amo&to=/en-US/firefox/' % AMO_API_BASE
+
+        self.cookies.clear_expired_cookies()
+        if self.firefox_cookies_profile:
+            webbrowser.open_new_tab(login_url)
+            input("Log in to AMO in Firefox and press enter to continue")
+            self.load_firefox_cookies(self.firefox_cookies_profile)
+            return True
+
         req = super().request('get', login_url, allow_redirects=False)
 
         if req.status_code != 302:
