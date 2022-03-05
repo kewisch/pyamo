@@ -339,7 +339,7 @@ class AddonReviewVersion:
             elif mime == "application/zip":
                 with ZipFile(self.sourcepath, 'r') as zf:
                     zf.extractall(extractpath)
-            elif mime == "application/x-gzip":
+            elif mime in ('application/x-gzip', 'application/gzip'):
                 with tarfile.open(self.sourcepath, 'r:gz') as zf:
                     zf.extractall(extractpath)
             else:
