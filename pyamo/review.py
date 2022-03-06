@@ -223,7 +223,7 @@ class Review:
 
     def flags(self, flags=None):
         url = AMO_REVIEWERS_API_BASE + '/addon/%s/flags/' % self.addonid
-        headers = {'Authorization': 'Bearer ' + self.api_token}
+        headers = {'Authorization': 'Session ' + self.session.cookies.get('sessionid')}
         req = self.session.patch(url, json=flags or {}, headers=headers, allow_redirects=False)
         print(req.json())
         if not req.status_code == 200:
@@ -232,7 +232,7 @@ class Review:
 
     def admin_disable(self):
         url = AMO_REVIEWERS_API_BASE + '/addon/%s/disable/' % self.addonid
-        headers = {'Authorization': 'Bearer ' + self.api_token}
+        headers = {'Authorization': 'Session ' + self.session.cookies.get('sessionid')}
         req = self.session.post(url, headers=headers, allow_redirects=False)
         return req.status_code == 202
 
@@ -253,7 +253,7 @@ class Review:
             "un" if not subscribe else "",
             "un" if self.unlisted else ""
         )
-        headers = {'Authorization': 'Bearer ' + self.api_token}
+        headers = {'Authorization': 'Session ' + self.session.cookies.get('sessionid')}
         req = self.session.post(url, headers=headers, allow_redirects=False)
         return req.status_code == 202
 
