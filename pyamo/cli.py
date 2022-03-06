@@ -332,7 +332,7 @@ def cmd_info(handler, amo, args):
             for version in review.versions:
                 print("\tVersion %s @ %s" % (version.version, version.date))
                 for fileobj in version.files:
-                    print("\t\tFile #%s (%s): %s" % (fileobj.slug, fileobj.status, fileobj.url))
+                    print("\t\tFile #%s (%s): %s" % (fileobj.fileid, fileobj.status, fileobj.url))
                 if version.sources:
                     print("\t\tSources: %s" % version.sources)
 

@@ -80,12 +80,11 @@ class Review:
     def get_next_page(self):
         return self.get_version_page(self.page + 1)
 
-    def get_version_page(self, page=1):
-        req = self.session.get(self.url + "?page=%d" % page, stream=True, allow_redirects=False)
-
+    def check_redirects(self, req):
         if req.status_code == 302:
             if 'messages' not in req.cookies:
                 raise Exception("Invalid response")
+
             message = req.cookies['messages'].split("\\\\n")
             if len(message) != 4:
                 raise Exception("Invalid response")
@@ -99,6 +98,12 @@ class Review:
             else:
                 req.raise_for_status()
 
+        return req
+
+    def get_version_page(self, page=1):
+        req = self.session.get(self.url + "?page=%d" % page, stream=True, allow_redirects=False)
+        req = self.check_redirects(req)
+
         req.raw.decode_content = True
         doc = lxml.html.parse(req.raw).getroot()
 
@@ -109,12 +114,14 @@ class Review:
         self.enabledversions = [
           x.attrib['value'] for x in doc.xpath(csspath('#id_versions > option'))
         ]
-        tokennodes = doc.xpath(csspath("#extra-review-actions"))
-        self.api_token = tokennodes[0].attrib['data-api-token'] if tokennodes else None
 
         self.addonid = doc.xpath(csspath('#addon'))[0].attrib['data-id']
-        slugnodes = doc.xpath(csspath(".file-info > .light > a:not([title])"))
-        self.slug = unquote(slugnodes[0].attrib['href'].split("/")[-4])
+        try:
+            slugnodes = doc.xpath(csspath(".file-info > .light > a:not([title])"))
+            self.slug = unquote(slugnodes[0].attrib['href'].split("/")[-4])
+        except IndexError:
+            slugnodes = doc.xpath(csspath("#actions-addon > li > a[href$='/edit']"))
+            self.slug = unquote(slugnodes[0].attrib['href'].split("/")[-4])
 
         if self.unlisted:
             self.url = '%s/review-unlisted/%s' % (AMO_EDITOR_BASE, self.slug)
@@ -395,7 +402,7 @@ class AddonVersionFile:
         urlpath = urlparse(self.url).path
         urlpathparts = urlpath.split('/')
         self.filename = urlpathparts[-1]
-        self.addonid = urlpathparts[-2]
+        self.fileid = urlpathparts[-3]
         self.savedpath = None
         self.profile = None
 
