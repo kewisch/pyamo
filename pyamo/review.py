@@ -19,6 +19,7 @@ import lxml.html
 import magic
 
 from .utils import AMO_BASE, AMO_EDITOR_BASE, AMO_REVIEWERS_API_BASE, csspath
+from .user import User
 from .lzma import SevenZFile
 
 
@@ -53,6 +54,7 @@ class Review:
         self.slug = None
         self.api_token = None
         self.enabledversions = []
+        self.developers = []
 
     def find_latest_version(self):
         if len(self.versions) > 0:
@@ -162,6 +164,14 @@ class Review:
             versions.append(AddonReviewVersion(self, head, head.getnext()))
 
         self.versions = versions + self.versions
+
+        devnodes = doc.xpath(
+          csspath('#scroll_sidebar ul:not([id]) a[href*="/user/"]')
+        )
+
+        for dev in devnodes:
+            self.developers.append(User.getcache(self.parent, dev.attrib['href'].split("/")[-2]))
+
         self.page = page
         return True
 

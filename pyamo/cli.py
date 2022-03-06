@@ -310,6 +310,10 @@ def cmd_adminstatus(handler, amo, args):  # pylint: disable=too-many-branches,to
 @subcmd('info', help="Show basic information about an add-on")
 def cmd_info(handler, amo, args):
     handler.add_argument('addon', nargs='*', help='the addon id or url to show info about')
+    handler.add_argument('-d', '--developers', action='store_true',
+                         help="Show developer emails for each add-on")
+    handler.add_argument('--expand', action='store_true',
+                         help="Show secondary information, e.g. developer emails")
     handler.add_argument('-f', '--files', action='store_true',
                          help='Show information about versions and files')
     handler.add_argument('-s', '--stats', action='store_true',
@@ -323,6 +327,15 @@ def cmd_info(handler, amo, args):
     for addon in args.addon:
         review = amo.get_review(addon)
         print("%s (%s)" % (review.addonname, review.url))
+        if args.developers:
+            if args.expand:
+                print(
+                    "\tDevelopers:\n\t\t" +
+                    "\n\t\t".join(dev.get().email for dev in review.developers)
+                )
+            else:
+                print("\tDevelopers: " + ", ".join(str(dev.userid) for dev in review.developers))
+
         if args.stats:
             print("\tDownloads: %d\n\tActive Daily Users: %d" % (review.downloads, review.adu))
             adu_total += review.adu

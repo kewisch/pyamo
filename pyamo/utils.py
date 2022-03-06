@@ -29,6 +29,7 @@ AMO_API_BASE = "https://%s/api/v5" % AMO_HOST
 AMO_API_AUTH = "https://%s/api/auth" % AMO_HOST
 AMO_REVIEWERS_API_BASE = "https://reviewers.%s/api/v5/reviewers" % AMO_HOST
 AMO_EDITOR_BASE = 'https://reviewers.%s/en-US/reviewers' % AMO_HOST
+AMO_USER_BASE = 'https://%s/en-US/firefox/user' % AMO_HOST
 AMO_ADMIN_BASE = '%s/admin' % AMO_INTERNAL_BASE
 AMO_DEVELOPER_BASE = '%s/developers' % AMO_BASE
 AMO_TIMEZONE = timezone("America/Los_Angeles")
