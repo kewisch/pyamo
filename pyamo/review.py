@@ -385,6 +385,7 @@ class AddonVersionFile:
         'Mac OS X': 'mac',
         'Windows': 'windows',
         'All Platforms': 'all',
+        'Download': 'all',  # Themes
         'Android': 'android'
     }
 
